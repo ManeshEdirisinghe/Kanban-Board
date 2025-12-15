@@ -107,8 +107,8 @@ class KanbanBoard {
             <div class="task-content">
                 <span class="task-text">${this.escapeHtml(task.text)}</span>
                 <div class="task-actions">
-                    <button class="edit-btn" title="Edit task">✏️</button>
-                    <button class="delete-btn" title="Delete task">🗑️</button>
+                    <button class="edit-btn" title="Edit task"><i class="fas fa-pen"></i></button>
+                    <button class="delete-btn" title="Delete task"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
             <div class="task-meta">
