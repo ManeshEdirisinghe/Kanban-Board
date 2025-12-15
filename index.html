@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Board - Task Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📋 Kanban Board</h1>
+            <p>Drag and drop tasks to organize your workflow</p>
+        </header>
+
+        <!-- Add Task Section -->
+        <div class="add-task-section">
+            <input type="text" id="taskInput" placeholder="Enter a new task..." maxlength="100">
+            <select id="prioritySelect">
+                <option value="low">🟢 Low Priority</option>
+                <option value="medium" selected>🟡 Medium Priority</option>
+                <option value="high">🔴 High Priority</option>
+            </select>
+            <button id="addTaskBtn">+ Add Task</button>
+        </div>
+
+        <!-- Kanban Board -->
+        <div class="board">
+            <!-- To Do Column -->
+            <div class="column" id="todo">
+                <div class="column-header">
+                    <h2>📝 To Do</h2>
+                    <span class="task-count" id="todo-count">0</span>
+                </div>
+                <div class="task-list" id="todo-list" data-status="todo">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="column" id="inprogress">
+                <div class="column-header">
+                    <h2>🔄 In Progress</h2>
+                    <span class="task-count" id="inprogress-count">0</span>
+                </div>
+                <div class="task-list" id="inprogress-list" data-status="inprogress">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+
+            <!-- Done Column -->
+            <div class="column" id="done">
+                <div class="column-header">
+                    <h2>✅ Done</h2>
+                    <span class="task-count" id="done-count">0</span>
+                </div>
+                <div class="task-list" id="done-list" data-status="done">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <button id="clearAllBtn">🗑️ Clear All Tasks</button>
+            <p>Tasks are saved automatically in your browser</p>
+        </footer>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <h3>Edit Task</h3>
+            <input type="text" id="editTaskInput" placeholder="Task description..." maxlength="100">
+            <select id="editPrioritySelect">
+                <option value="low">🟢 Low Priority</option>
+                <option value="medium">🟡 Medium Priority</option>
+                <option value="high">🔴 High Priority</option>
+            </select>
+            <div class="modal-buttons">
+                <button id="saveEditBtn">Save</button>
+                <button id="cancelEditBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
