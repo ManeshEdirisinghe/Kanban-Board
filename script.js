@@ -151,6 +151,47 @@ class KanbanBoard {
         this.filterAssignee = document.getElementById('filterAssignee');
         this.clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
+        // DOM Elements - Calendar View
+        this.calendarViewBtn = document.getElementById('calendarViewBtn');
+        this.calendarModal = document.getElementById('calendarModal');
+        this.calendarGrid = document.getElementById('calendarGrid');
+        this.calendarTitle = document.getElementById('calendarTitle');
+        this.prevMonthBtn = document.getElementById('prevMonthBtn');
+        this.nextMonthBtn = document.getElementById('nextMonthBtn');
+        this.closeCalendarBtn = document.getElementById('closeCalendarBtn');
+        this.currentCalendarDate = new Date();
+
+        // DOM Elements - Notifications
+        this.notificationBtn = document.getElementById('notificationBtn');
+        this.notificationBadge = document.getElementById('notificationBadge');
+        this.notificationModal = document.getElementById('notificationModal');
+        this.enableNotifications = document.getElementById('enableNotifications');
+        this.notifyBefore = document.getElementById('notifyBefore');
+        this.notifyOverdue = document.getElementById('notifyOverdue');
+        this.overdueSummary = document.getElementById('overdueSummary');
+        this.saveNotificationBtn = document.getElementById('saveNotificationBtn');
+        this.closeNotificationBtn = document.getElementById('closeNotificationBtn');
+
+        // DOM Elements - Email Summary
+        this.emailSummaryBtn = document.getElementById('emailSummaryBtn');
+        this.emailModal = document.getElementById('emailModal');
+        this.emailBoardSelect = document.getElementById('emailBoardSelect');
+        this.includeTodo = document.getElementById('includeTodo');
+        this.includeInProgress = document.getElementById('includeInProgress');
+        this.includeDone = document.getElementById('includeDone');
+        this.includeOverdue = document.getElementById('includeOverdue');
+        this.emailPreview = document.getElementById('emailPreview');
+        this.sendEmailBtn = document.getElementById('sendEmailBtn');
+        this.copyEmailBtn = document.getElementById('copyEmailBtn');
+        this.closeEmailBtn = document.getElementById('closeEmailBtn');
+
+        // Notification settings
+        this.notificationSettings = JSON.parse(localStorage.getItem('kanbanNotifications')) || {
+            enabled: false,
+            notifyBefore: 1,
+            notifyOverdue: true
+        };
+
         // Board container
         this.boardContainer = document.getElementById('board');
     }
@@ -236,7 +277,7 @@ class KanbanBoard {
         this.clearFiltersBtn.addEventListener('click', () => this.clearFilters());
 
         // Close modals when clicking outside
-        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal].forEach(modal => {
+        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
@@ -245,12 +286,36 @@ class KanbanBoard {
             });
         });
 
+        // Calendar events
+        this.calendarViewBtn.addEventListener('click', () => this.openCalendarModal());
+        this.closeCalendarBtn.addEventListener('click', () => this.closeCalendarModal());
+        this.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
+        this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
+
+        // Notification events
+        this.notificationBtn.addEventListener('click', () => this.openNotificationModal());
+        this.saveNotificationBtn.addEventListener('click', () => this.saveNotificationSettings());
+        this.closeNotificationBtn.addEventListener('click', () => this.closeNotificationModal());
+
+        // Email events
+        this.emailSummaryBtn.addEventListener('click', () => this.openEmailModal());
+        this.sendEmailBtn.addEventListener('click', () => this.sendEmail());
+        this.copyEmailBtn.addEventListener('click', () => this.copyEmailToClipboard());
+        this.closeEmailBtn.addEventListener('click', () => this.closeEmailModal());
+        [this.emailBoardSelect, this.includeTodo, this.includeInProgress, this.includeDone, this.includeOverdue].forEach(el => {
+            el.addEventListener('change', () => this.updateEmailPreview());
+        });
+
         // Render board
         this.renderBoardList();
         this.renderTeamAvatars();
         this.updateAssigneeSelects();
         this.renderColumns();
         this.renderAllTasks();
+        
+        // Initialize notifications
+        this.initNotifications();
+        this.updateNotificationBadge();
     }
 
     // ==================== THEME ====================
@@ -372,6 +437,7 @@ class KanbanBoard {
 
     saveBoards() {
         localStorage.setItem('kanbanBoards', JSON.stringify(this.boards));
+        this.updateNotificationBadge();
     }
 
     // ==================== COLUMNS ====================
@@ -1180,6 +1246,424 @@ class KanbanBoard {
         this.manualHours.value = '';
         this.manualMinutes.value = '';
         this.renderTimeTracking();
+    }
+
+    // ==================== CALENDAR VIEW ====================
+    openCalendarModal() {
+        this.currentCalendarDate = new Date();
+        this.renderCalendar();
+        this.calendarModal.classList.add('active');
+    }
+
+    closeCalendarModal() {
+        this.calendarModal.classList.remove('active');
+    }
+
+    changeMonth(delta) {
+        this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + delta);
+        this.renderCalendar();
+    }
+
+    renderCalendar() {
+        const year = this.currentCalendarDate.getFullYear();
+        const month = this.currentCalendarDate.getMonth();
+        
+        // Update title
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        this.calendarTitle.textContent = `${monthNames[month]} ${year}`;
+        
+        // Get first day and days in month
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+        
+        // Get all tasks with due dates
+        const tasksWithDates = this.getAllTasksWithDueDates();
+        
+        // Build calendar grid
+        let html = '';
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        dayNames.forEach(day => {
+            html += `<div class="calendar-day-header">${day}</div>`;
+        });
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Previous month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const day = daysInPrevMonth - i;
+            html += `<div class="calendar-day other-month"><span class="day-number">${day}</span></div>`;
+        }
+        
+        // Current month days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            date.setHours(0, 0, 0, 0);
+            const dateStr = this.formatDateForCompare(date);
+            const isToday = date.getTime() === today.getTime();
+            
+            const dayTasks = tasksWithDates.filter(t => t.dueDateStr === dateStr);
+            
+            let tasksHtml = '<div class="calendar-tasks">';
+            const maxTasks = 3;
+            dayTasks.slice(0, maxTasks).forEach(task => {
+                const isOverdue = date < today && task.status !== 'done';
+                tasksHtml += `<div class="calendar-task ${task.priority}${isOverdue ? ' overdue' : ''}" 
+                              title="${this.escapeHtml(task.text)}" 
+                              data-task-id="${task.id}">${this.escapeHtml(task.text)}</div>`;
+            });
+            if (dayTasks.length > maxTasks) {
+                tasksHtml += `<div class="calendar-more">+${dayTasks.length - maxTasks} more</div>`;
+            }
+            tasksHtml += '</div>';
+            
+            html += `<div class="calendar-day${isToday ? ' today' : ''}">
+                <span class="day-number">${day}</span>
+                ${tasksHtml}
+            </div>`;
+        }
+        
+        // Next month days
+        const totalCells = firstDay + daysInMonth;
+        const remainingCells = (7 - (totalCells % 7)) % 7;
+        for (let day = 1; day <= remainingCells; day++) {
+            html += `<div class="calendar-day other-month"><span class="day-number">${day}</span></div>`;
+        }
+        
+        this.calendarGrid.innerHTML = html;
+        
+        // Add click events to calendar tasks
+        this.calendarGrid.querySelectorAll('.calendar-task').forEach(taskEl => {
+            taskEl.addEventListener('click', () => {
+                const taskId = taskEl.dataset.taskId;
+                this.closeCalendarModal();
+                this.openEditModal(taskId);
+            });
+        });
+    }
+
+    getAllTasksWithDueDates() {
+        const tasks = [];
+        this.boards.forEach(board => {
+            board.tasks.forEach(task => {
+                if (task.dueDate) {
+                    tasks.push({
+                        ...task,
+                        boardId: board.id,
+                        boardName: board.name,
+                        dueDateStr: task.dueDate
+                    });
+                }
+            });
+        });
+        return tasks;
+    }
+
+    formatDateForCompare(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // ==================== NOTIFICATIONS ====================
+    initNotifications() {
+        // Load settings
+        this.enableNotifications.checked = this.notificationSettings.enabled;
+        this.notifyBefore.value = this.notificationSettings.notifyBefore;
+        this.notifyOverdue.checked = this.notificationSettings.notifyOverdue;
+        
+        // Check for due tasks periodically
+        this.checkDueTasks();
+        setInterval(() => this.checkDueTasks(), 60000); // Check every minute
+    }
+
+    async requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            alert('This browser does not support notifications.');
+            return false;
+        }
+        
+        if (Notification.permission === 'granted') {
+            return true;
+        }
+        
+        if (Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            return permission === 'granted';
+        }
+        
+        return false;
+    }
+
+    checkDueTasks() {
+        if (!this.notificationSettings.enabled) return;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const notifyDays = parseInt(this.notificationSettings.notifyBefore);
+        const futureDate = new Date(today);
+        futureDate.setDate(futureDate.getDate() + notifyDays);
+        
+        const overdueTasks = [];
+        const upcomingTasks = [];
+        
+        this.boards.forEach(board => {
+            const lastColumnId = board.columns[board.columns.length - 1]?.id;
+            board.tasks.forEach(task => {
+                if (!task.dueDate || task.status === lastColumnId) return;
+                
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                
+                if (dueDate < today && this.notificationSettings.notifyOverdue) {
+                    overdueTasks.push({ ...task, boardName: board.name });
+                } else if (dueDate <= futureDate && dueDate >= today) {
+                    upcomingTasks.push({ ...task, boardName: board.name });
+                }
+            });
+        });
+        
+        // Update badge
+        this.updateNotificationBadge();
+        
+        // Show notifications (throttled to avoid spam)
+        const lastNotified = localStorage.getItem('lastNotificationTime');
+        const now = Date.now();
+        const hoursSinceLastNotification = lastNotified ? (now - parseInt(lastNotified)) / (1000 * 60 * 60) : 24;
+        
+        if (hoursSinceLastNotification >= 1 && (overdueTasks.length > 0 || upcomingTasks.length > 0)) {
+            if (Notification.permission === 'granted') {
+                if (overdueTasks.length > 0) {
+                    new Notification('⚠️ Overdue Tasks', {
+                        body: `You have ${overdueTasks.length} overdue task(s)!`,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>'
+                    });
+                }
+                if (upcomingTasks.length > 0) {
+                    new Notification('📅 Upcoming Tasks', {
+                        body: `${upcomingTasks.length} task(s) due soon!`,
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📋</text></svg>'
+                    });
+                }
+                localStorage.setItem('lastNotificationTime', now.toString());
+            }
+        }
+    }
+
+    updateNotificationBadge() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let overdueCount = 0;
+        this.boards.forEach(board => {
+            const lastColumnId = board.columns[board.columns.length - 1]?.id;
+            board.tasks.forEach(task => {
+                if (!task.dueDate || task.status === lastColumnId) return;
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (dueDate < today) overdueCount++;
+            });
+        });
+        
+        if (overdueCount > 0) {
+            this.notificationBadge.textContent = overdueCount;
+            this.notificationBadge.style.display = 'flex';
+        } else {
+            this.notificationBadge.style.display = 'none';
+        }
+    }
+
+    openNotificationModal() {
+        this.enableNotifications.checked = this.notificationSettings.enabled;
+        this.notifyBefore.value = this.notificationSettings.notifyBefore;
+        this.notifyOverdue.checked = this.notificationSettings.notifyOverdue;
+        
+        this.renderOverdueSummary();
+        this.notificationModal.classList.add('active');
+    }
+
+    closeNotificationModal() {
+        this.notificationModal.classList.remove('active');
+    }
+
+    async saveNotificationSettings() {
+        if (this.enableNotifications.checked) {
+            const granted = await this.requestNotificationPermission();
+            if (!granted) {
+                alert('Notification permission was denied. Please enable it in your browser settings.');
+                this.enableNotifications.checked = false;
+                return;
+            }
+        }
+        
+        this.notificationSettings = {
+            enabled: this.enableNotifications.checked,
+            notifyBefore: parseInt(this.notifyBefore.value),
+            notifyOverdue: this.notifyOverdue.checked
+        };
+        
+        localStorage.setItem('kanbanNotifications', JSON.stringify(this.notificationSettings));
+        this.closeNotificationModal();
+        this.checkDueTasks();
+    }
+
+    renderOverdueSummary() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const overdueTasks = [];
+        this.boards.forEach(board => {
+            const lastColumnId = board.columns[board.columns.length - 1]?.id;
+            board.tasks.forEach(task => {
+                if (!task.dueDate || task.status === lastColumnId) return;
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (dueDate < today) {
+                    overdueTasks.push({ ...task, boardName: board.name, dueDate: dueDate });
+                }
+            });
+        });
+        
+        if (overdueTasks.length === 0) {
+            this.overdueSummary.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No overdue tasks 🎉</p>';
+            return;
+        }
+        
+        let html = `<div class="overdue-summary-title"><i class="fas fa-exclamation-triangle"></i> ${overdueTasks.length} Overdue Task(s)</div>`;
+        overdueTasks.forEach(task => {
+            const daysOverdue = Math.floor((today - task.dueDate) / (1000 * 60 * 60 * 24));
+            html += `
+                <div class="overdue-task-item">
+                    <span class="overdue-task-name">${this.escapeHtml(task.text)}</span>
+                    <span class="overdue-task-date">${daysOverdue} day(s) overdue</span>
+                </div>
+            `;
+        });
+        this.overdueSummary.innerHTML = html;
+    }
+
+    // ==================== EMAIL SUMMARY ====================
+    openEmailModal() {
+        this.updateEmailPreview();
+        this.emailModal.classList.add('active');
+    }
+
+    closeEmailModal() {
+        this.emailModal.classList.remove('active');
+    }
+
+    generateEmailContent() {
+        const includeCurrentOnly = this.emailBoardSelect.value === 'current';
+        const includeTodo = this.includeTodo.checked;
+        const includeInProgress = this.includeInProgress.checked;
+        const includeDone = this.includeDone.checked;
+        const includeOverdueOnly = this.includeOverdue.checked;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const boardsToInclude = includeCurrentOnly 
+            ? [this.getCurrentBoard()] 
+            : this.boards;
+        
+        let subject = `Task Summary - ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        let body = `KANBAN BOARD TASK SUMMARY\n`;
+        body += `Generated: ${new Date().toLocaleString()}\n`;
+        body += `${'='.repeat(50)}\n\n`;
+        
+        let totalTasks = 0;
+        let overdueTasks = 0;
+        
+        boardsToInclude.forEach(board => {
+            if (!board) return;
+            
+            const lastColumnId = board.columns[board.columns.length - 1]?.id;
+            const firstColumnId = board.columns[0]?.id;
+            
+            let boardTasks = [];
+            
+            board.tasks.forEach(task => {
+                const isOverdue = task.dueDate && new Date(task.dueDate) < today && task.status !== lastColumnId;
+                
+                if (includeOverdueOnly && !isOverdue) return;
+                
+                const isTodo = task.status === firstColumnId;
+                const isDone = task.status === lastColumnId;
+                const isInProgress = !isTodo && !isDone;
+                
+                if ((includeTodo && isTodo) || (includeInProgress && isInProgress) || (includeDone && isDone)) {
+                    boardTasks.push({ ...task, isOverdue, statusName: this.getColumnName(board, task.status) });
+                    totalTasks++;
+                    if (isOverdue) overdueTasks++;
+                }
+            });
+            
+            if (boardTasks.length > 0) {
+                body += `📋 BOARD: ${board.name}\n`;
+                body += `${'-'.repeat(40)}\n`;
+                
+                boardTasks.forEach(task => {
+                    const priorityEmoji = { high: '🔴', medium: '🟡', low: '🟢' };
+                    body += `\n${priorityEmoji[task.priority] || '⚪'} ${task.text}\n`;
+                    body += `   Status: ${task.statusName}\n`;
+                    if (task.dueDate) {
+                        body += `   Due: ${new Date(task.dueDate).toLocaleDateString()}`;
+                        if (task.isOverdue) body += ` ⚠️ OVERDUE`;
+                        body += `\n`;
+                    }
+                    if (task.description) {
+                        body += `   Note: ${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}\n`;
+                    }
+                    if (task.assignee) {
+                        const member = this.getMember(task.assignee);
+                        if (member) body += `   Assigned: ${member.name}\n`;
+                    }
+                });
+                body += `\n`;
+            }
+        });
+        
+        body += `${'='.repeat(50)}\n`;
+        body += `SUMMARY: ${totalTasks} task(s)`;
+        if (overdueTasks > 0) body += ` | ${overdueTasks} overdue`;
+        body += `\n`;
+        
+        return { subject, body };
+    }
+
+    getColumnName(board, status) {
+        const column = board.columns.find(c => c.id === status);
+        return column ? column.name : status;
+    }
+
+    updateEmailPreview() {
+        const { body } = this.generateEmailContent();
+        this.emailPreview.textContent = body;
+    }
+
+    sendEmail() {
+        const { subject, body } = this.generateEmailContent();
+        const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailtoLink, '_blank');
+    }
+
+    copyEmailToClipboard() {
+        const { subject, body } = this.generateEmailContent();
+        const fullContent = `Subject: ${subject}\n\n${body}`;
+        
+        navigator.clipboard.writeText(fullContent).then(() => {
+            const originalText = this.copyEmailBtn.innerHTML;
+            this.copyEmailBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+                this.copyEmailBtn.innerHTML = originalText;
+            }, 2000);
+        }).catch(() => {
+            alert('Failed to copy to clipboard');
+        });
     }
 
     // ==================== UTILITIES ====================

@@ -68,6 +68,16 @@
                     </select>
                     <button id="clearFiltersBtn" title="Clear Filters"><i class="fas fa-times"></i></button>
                 </div>
+                <button class="view-toggle-btn" id="calendarViewBtn" title="Calendar View">
+                    <i class="fas fa-calendar-alt"></i>
+                </button>
+                <button class="notification-btn" id="notificationBtn" title="Notification Settings">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <button class="email-btn" id="emailSummaryBtn" title="Email Task Summary">
+                    <i class="fas fa-envelope"></i>
+                </button>
                 <button class="theme-toggle" id="themeToggle" title="Toggle theme">
                     <i class="fas fa-moon" id="themeIcon"></i>
                 </button>
@@ -280,6 +290,103 @@
             </div>
             <div class="modal-buttons">
                 <button id="closeTeamModalBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar View Modal -->
+    <div class="modal" id="calendarModal">
+        <div class="modal-content modal-calendar">
+            <div class="calendar-header">
+                <h3><i class="fas fa-calendar-alt"></i> Calendar View</h3>
+                <div class="calendar-nav">
+                    <button id="prevMonthBtn" title="Previous month"><i class="fas fa-chevron-left"></i></button>
+                    <span id="calendarTitle">December 2024</span>
+                    <button id="nextMonthBtn" title="Next month"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <button id="closeCalendarBtn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar will be rendered here -->
+            </div>
+            <div class="calendar-legend">
+                <span class="legend-item"><span class="legend-dot high"></span> High Priority</span>
+                <span class="legend-item"><span class="legend-dot medium"></span> Medium Priority</span>
+                <span class="legend-item"><span class="legend-dot low"></span> Low Priority</span>
+                <span class="legend-item"><span class="legend-dot overdue"></span> Overdue</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings Modal -->
+    <div class="modal" id="notificationModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-bell"></i> Notification Settings</h3>
+            <div class="notification-settings">
+                <div class="notification-option">
+                    <label>
+                        <input type="checkbox" id="enableNotifications">
+                        <span>Enable browser notifications</span>
+                    </label>
+                </div>
+                <div class="notification-option">
+                    <label>
+                        <span>Notify me before due date:</span>
+                        <select id="notifyBefore">
+                            <option value="0">On due date</option>
+                            <option value="1" selected>1 day before</option>
+                            <option value="2">2 days before</option>
+                            <option value="3">3 days before</option>
+                            <option value="7">1 week before</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="notification-option">
+                    <label>
+                        <input type="checkbox" id="notifyOverdue" checked>
+                        <span>Notify about overdue tasks</span>
+                    </label>
+                </div>
+            </div>
+            <div class="overdue-summary" id="overdueSummary">
+                <!-- Overdue tasks will be listed here -->
+            </div>
+            <div class="modal-buttons">
+                <button id="saveNotificationBtn">Save Settings</button>
+                <button id="closeNotificationBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Summary Modal -->
+    <div class="modal" id="emailModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-envelope"></i> Email Task Summary</h3>
+            <div class="email-options">
+                <div class="email-option">
+                    <label>Include tasks from:</label>
+                    <select id="emailBoardSelect">
+                        <option value="current">Current Board</option>
+                        <option value="all">All Boards</option>
+                    </select>
+                </div>
+                <div class="email-option">
+                    <label>Include:</label>
+                    <div class="email-checkboxes">
+                        <label><input type="checkbox" id="includeTodo" checked> To Do</label>
+                        <label><input type="checkbox" id="includeInProgress" checked> In Progress</label>
+                        <label><input type="checkbox" id="includeDone"> Done</label>
+                        <label><input type="checkbox" id="includeOverdue" checked> Overdue Only</label>
+                    </div>
+                </div>
+                <div class="email-preview" id="emailPreview">
+                    <!-- Preview will be shown here -->
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="sendEmailBtn"><i class="fas fa-paper-plane"></i> Open Email Client</button>
+                <button id="copyEmailBtn"><i class="fas fa-copy"></i> Copy to Clipboard</button>
+                <button id="closeEmailBtn">Cancel</button>
             </div>
         </div>
     </div>
