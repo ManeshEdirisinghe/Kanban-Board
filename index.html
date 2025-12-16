@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,46 +10,69 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Header -->
+        <!-- Top Bar with Board Selector -->
+        <div class="top-bar">
+            <div class="board-selector">
+                <button class="board-menu-btn" id="boardMenuBtn">
+                    <i class="fas fa-layer-group"></i>
+                    <span id="currentBoardName">My Board</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="board-dropdown" id="boardDropdown">
+                    <div class="board-list" id="boardList">
+                        <!-- Boards will be listed here -->
+                    </div>
+                    <div class="board-dropdown-actions">
+                        <button id="newBoardBtn"><i class="fas fa-plus"></i> New Board</button>
+                    </div>
+                </div>
+            </div>
+            <div class="team-section">
+                <div class="team-avatars" id="teamAvatars">
+                    <!-- Team member avatars will be shown here -->
+                </div>
+                <button class="manage-team-btn" id="manageTeamBtn" title="Manage Team">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Header with Search -->
         <header class="header">
-            <div class="header-content">
+            <div class="header-left">
                 <h1><i class="fas fa-columns"></i> Kanban Board</h1>
                 <p>Drag and drop tasks to organize your workflow</p>
             </div>
-            <button id="themeToggle" class="theme-toggle" title="Toggle Theme">
-                <i class="fas fa-moon" id="themeIcon"></i>
-            </button>
-        </header>
-
-        <!-- Search and Filter Section -->
-        <div class="search-filter-section">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search tasks...">
+            <div class="header-right">
+                <div class="search-filter-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search tasks...">
+                    </div>
+                    <select id="filterPriority">
+                        <option value="all">All Priorities</option>
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                    <select id="filterLabel">
+                        <option value="all">All Labels</option>
+                        <option value="bug">Bug</option>
+                        <option value="feature">Feature</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="improvement">Improvement</option>
+                        <option value="documentation">Documentation</option>
+                    </select>
+                    <select id="filterAssignee" title="Filter by Assignee">
+                        <option value="all">All Assignees</option>
+                    </select>
+                    <button id="clearFiltersBtn" title="Clear Filters"><i class="fas fa-times"></i></button>
+                </div>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
             </div>
-            <select id="filterPriority">
-                <option value="all">All Priorities</option>
-                <option value="high">High Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="low">Low Priority</option>
-            </select>
-            <select id="filterLabel">
-                <option value="all">All Labels</option>
-                <option value="bug">Bug</option>
-                <option value="feature">Feature</option>
-                <option value="urgent">Urgent</option>
-                <option value="improvement">Improvement</option>
-                <option value="documentation">Documentation</option>
-            </select>
-            <select id="filterDate">
-                <option value="all">All Dates</option>
-                <option value="overdue">Overdue</option>
-                <option value="today">Due Today</option>
-                <option value="week">Due This Week</option>
-                <option value="nodate">No Due Date</option>
-            </select>
-            <button id="clearFiltersBtn" title="Clear Filters"><i class="fas fa-times"></i></button>
-        </div>
+        </header>
 
         <!-- Add Task Section -->
         <div class="add-task-section">
@@ -69,6 +92,9 @@
                     <option value="documentation">Documentation</option>
                 </select>
                 <input type="date" id="dueDateInput" title="Due Date">
+                <select id="assigneeSelect" title="Assign to">
+                    <option value="">Unassigned</option>
+                </select>
                 <button id="addTaskBtn"><i class="fas fa-plus"></i> Add Task</button>
             </div>
             <div class="add-task-row description-row">
@@ -77,49 +103,19 @@
         </div>
 
         <!-- Kanban Board -->
-        <div class="board">
-            <!-- To Do Column -->
-            <div class="column" id="todo">
-                <div class="column-header">
-                    <h2><i class="fas fa-clipboard-list"></i> To Do</h2>
-                    <span class="task-count" id="todo-count">0</span>
-                </div>
-                <div class="task-list" id="todo-list" data-status="todo">
-                    <!-- Tasks will be added here -->
-                </div>
-            </div>
-
-            <!-- In Progress Column -->
-            <div class="column" id="inprogress">
-                <div class="column-header">
-                    <h2><i class="fas fa-spinner"></i> In Progress</h2>
-                    <span class="task-count" id="inprogress-count">0</span>
-                </div>
-                <div class="task-list" id="inprogress-list" data-status="inprogress">
-                    <!-- Tasks will be added here -->
-                </div>
-            </div>
-
-            <!-- Done Column -->
-            <div class="column" id="done">
-                <div class="column-header">
-                    <h2><i class="fas fa-check-circle"></i> Done</h2>
-                    <span class="task-count" id="done-count">0</span>
-                </div>
-                <div class="task-list" id="done-list" data-status="done">
-                    <!-- Tasks will be added here -->
-                </div>
-            </div>
+        <div class="board" id="board">
+            <!-- Columns will be rendered dynamically -->
         </div>
 
         <!-- Footer -->
         <footer class="footer">
+            <button id="addColumnBtn"><i class="fas fa-plus-circle"></i> Add Column</button>
             <button id="clearAllBtn"><i class="fas fa-trash-alt"></i> Clear All Tasks</button>
             <p>Tasks are saved automatically in your browser</p>
         </footer>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Task Modal -->
     <div class="modal" id="editModal">
         <div class="modal-content modal-large">
             <h3><i class="fas fa-edit"></i> Edit Task</h3>
@@ -140,8 +136,32 @@
                     <option value="documentation">Documentation</option>
                 </select>
                 <input type="date" id="editDueDateInput" title="Due Date">
+                <select id="editAssigneeSelect" title="Assign to">
+                    <option value="">Unassigned</option>
+                </select>
             </div>
             
+            <!-- Time Tracking Section -->
+            <div class="time-tracking-section">
+                <div class="time-tracking-header">
+                    <h4><i class="fas fa-clock"></i> Time Tracking</h4>
+                    <span class="total-time" id="totalTimeDisplay">0h 0m</span>
+                </div>
+                <div class="time-controls">
+                    <button id="startTimerBtn" class="timer-btn start"><i class="fas fa-play"></i> Start</button>
+                    <button id="stopTimerBtn" class="timer-btn stop" disabled><i class="fas fa-stop"></i> Stop</button>
+                    <span class="current-timer" id="currentTimer">00:00:00</span>
+                </div>
+                <div class="time-log" id="timeLog">
+                    <!-- Time entries will be listed here -->
+                </div>
+                <div class="manual-time-entry">
+                    <input type="number" id="manualHours" placeholder="Hours" min="0" max="99">
+                    <input type="number" id="manualMinutes" placeholder="Minutes" min="0" max="59">
+                    <button id="addTimeBtn"><i class="fas fa-plus"></i> Log Time</button>
+                </div>
+            </div>
+
             <!-- Subtasks Section -->
             <div class="subtasks-section">
                 <div class="subtasks-header">
@@ -156,10 +176,110 @@
                     <button id="addSubtaskBtn" type="button"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
+
+            <!-- Attachments Section -->
+            <div class="attachments-section">
+                <div class="attachments-header">
+                    <h4><i class="fas fa-paperclip"></i> Attachments</h4>
+                </div>
+                <div class="attachments-list" id="attachmentsList">
+                    <!-- Attachments will be shown here -->
+                </div>
+                <div class="add-attachment">
+                    <label class="file-upload-btn">
+                        <i class="fas fa-upload"></i> Upload File
+                        <input type="file" id="attachmentInput" multiple accept="image/*,.pdf,.doc,.docx,.txt">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="comments-section">
+                <div class="comments-header">
+                    <h4><i class="fas fa-comments"></i> Comments</h4>
+                    <span class="comments-count" id="commentsCount">0</span>
+                </div>
+                <div class="comments-list" id="commentsList">
+                    <!-- Comments will be shown here -->
+                </div>
+                <div class="add-comment">
+                    <textarea id="commentInput" placeholder="Write a comment..." maxlength="500"></textarea>
+                    <button id="addCommentBtn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
             
             <div class="modal-buttons">
                 <button id="saveEditBtn">Save</button>
                 <button id="cancelEditBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Board Modal -->
+    <div class="modal" id="newBoardModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-layer-group"></i> Create New Board</h3>
+            <input type="text" id="newBoardInput" placeholder="Board name..." maxlength="50">
+            <div class="modal-buttons">
+                <button id="createBoardBtn">Create</button>
+                <button id="cancelBoardBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Column Modal -->
+    <div class="modal" id="addColumnModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-columns"></i> Add New Column</h3>
+            <input type="text" id="columnNameInput" placeholder="Column name..." maxlength="30">
+            <div class="icon-picker">
+                <span>Choose Icon:</span>
+                <div class="icon-options" id="iconOptions">
+                    <button class="icon-option selected" data-icon="fa-clipboard-list"><i class="fas fa-clipboard-list"></i></button>
+                    <button class="icon-option" data-icon="fa-spinner"><i class="fas fa-spinner"></i></button>
+                    <button class="icon-option" data-icon="fa-check-circle"><i class="fas fa-check-circle"></i></button>
+                    <button class="icon-option" data-icon="fa-hourglass-half"><i class="fas fa-hourglass-half"></i></button>
+                    <button class="icon-option" data-icon="fa-flag"><i class="fas fa-flag"></i></button>
+                    <button class="icon-option" data-icon="fa-bug"><i class="fas fa-bug"></i></button>
+                    <button class="icon-option" data-icon="fa-star"><i class="fas fa-star"></i></button>
+                    <button class="icon-option" data-icon="fa-archive"><i class="fas fa-archive"></i></button>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="createColumnBtn">Create</button>
+                <button id="cancelColumnBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Column Modal -->
+    <div class="modal" id="editColumnModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-edit"></i> Edit Column</h3>
+            <input type="text" id="editColumnNameInput" placeholder="Column name..." maxlength="30">
+            <div class="modal-buttons">
+                <button id="saveColumnBtn">Save</button>
+                <button id="deleteColumnBtn" class="danger">Delete Column</button>
+                <button id="cancelEditColumnBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Team Modal -->
+    <div class="modal" id="teamModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-users"></i> Manage Team</h3>
+            <div class="team-list" id="teamList">
+                <!-- Team members will be listed here -->
+            </div>
+            <div class="add-member">
+                <input type="text" id="memberNameInput" placeholder="Member name..." maxlength="30">
+                <input type="text" id="memberInitialsInput" placeholder="Initials (2)" maxlength="2">
+                <input type="color" id="memberColorInput" value="#3b82f6" title="Avatar color">
+                <button id="addMemberBtn"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="modal-buttons">
+                <button id="closeTeamModalBtn">Done</button>
             </div>
         </div>
     </div>
