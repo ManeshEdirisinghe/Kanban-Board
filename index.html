@@ -11,7 +11,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Top Bar with Board Selector -->
         <div class="top-bar">
             <div class="board-selector">
                 <button class="board-menu-btn" id="boardMenuBtn">
@@ -21,7 +20,6 @@
                 </button>
                 <div class="board-dropdown" id="boardDropdown">
                     <div class="board-list" id="boardList">
-                        <!-- Boards will be listed here -->
                     </div>
                     <div class="board-dropdown-actions">
                         <button id="newBoardBtn"><i class="fas fa-plus"></i> New Board</button>
@@ -30,7 +28,6 @@
             </div>
             <div class="team-section">
                 <div class="team-avatars" id="teamAvatars">
-                    <!-- Team member avatars will be shown here -->
                 </div>
                 <button class="manage-team-btn" id="manageTeamBtn" title="Manage Team">
                     <i class="fas fa-user-plus"></i>
@@ -38,7 +35,6 @@
             </div>
         </div>
 
-        <!-- Header with Search -->
         <header class="header">
             <div class="header-left">
                 <h1><i class="fas fa-columns"></i> Kanban Board</h1>
@@ -85,7 +81,6 @@
             </div>
         </header>
 
-        <!-- Add Task Section -->
         <div class="add-task-section">
             <div class="add-task-row">
                 <input type="text" id="taskInput" placeholder="Enter a new task..." maxlength="100">
@@ -113,12 +108,9 @@
             </div>
         </div>
 
-        <!-- Kanban Board -->
         <div class="board" id="board">
-            <!-- Columns will be rendered dynamically -->
         </div>
 
-        <!-- Footer -->
         <footer class="footer">
             <button id="addColumnBtn"><i class="fas fa-plus-circle"></i> Add Column</button>
             <button id="clearAllBtn"><i class="fas fa-trash-alt"></i> Clear All Tasks</button>
@@ -126,7 +118,6 @@
         </footer>
     </div>
 
-    <!-- Edit Task Modal -->
     <div class="modal" id="editModal">
         <div class="modal-content modal-large">
             <h3><i class="fas fa-edit"></i> Edit Task</h3>
@@ -152,7 +143,6 @@
                 </select>
             </div>
             
-            <!-- Time Tracking Section -->
             <div class="time-tracking-section">
                 <div class="time-tracking-header">
                     <h4><i class="fas fa-clock"></i> Time Tracking</h4>
@@ -164,7 +154,6 @@
                     <span class="current-timer" id="currentTimer">00:00:00</span>
                 </div>
                 <div class="time-log" id="timeLog">
-                    <!-- Time entries will be listed here -->
                 </div>
                 <div class="manual-time-entry">
                     <input type="number" id="manualHours" placeholder="Hours" min="0" max="99">
@@ -172,29 +161,23 @@
                     <button id="addTimeBtn"><i class="fas fa-plus"></i> Log Time</button>
                 </div>
             </div>
-
-            <!-- Subtasks Section -->
             <div class="subtasks-section">
                 <div class="subtasks-header">
                     <h4><i class="fas fa-list-check"></i> Subtasks</h4>
                     <span class="subtasks-progress" id="subtasksProgress">0/0</span>
                 </div>
                 <div class="subtasks-list" id="subtasksList">
-                    <!-- Subtasks will be added here -->
                 </div>
                 <div class="add-subtask">
                     <input type="text" id="subtaskInput" placeholder="Add a subtask..." maxlength="100">
                     <button id="addSubtaskBtn" type="button"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-
-            <!-- Attachments Section -->
             <div class="attachments-section">
                 <div class="attachments-header">
                     <h4><i class="fas fa-paperclip"></i> Attachments</h4>
                 </div>
                 <div class="attachments-list" id="attachmentsList">
-                    <!-- Attachments will be shown here -->
                 </div>
                 <div class="add-attachment">
                     <label class="file-upload-btn">
@@ -203,15 +186,12 @@
                     </label>
                 </div>
             </div>
-
-            <!-- Comments Section -->
             <div class="comments-section">
                 <div class="comments-header">
                     <h4><i class="fas fa-comments"></i> Comments</h4>
                     <span class="comments-count" id="commentsCount">0</span>
                 </div>
                 <div class="comments-list" id="commentsList">
-                    <!-- Comments will be shown here -->
                 </div>
                 <div class="add-comment">
                     <textarea id="commentInput" placeholder="Write a comment..." maxlength="500"></textarea>
@@ -226,7 +206,6 @@
         </div>
     </div>
 
-    <!-- New Board Modal -->
     <div class="modal" id="newBoardModal">
         <div class="modal-content">
             <h3><i class="fas fa-layer-group"></i> Create New Board</h3>
@@ -238,7 +217,6 @@
         </div>
     </div>
 
-    <!-- Add Column Modal -->
     <div class="modal" id="addColumnModal">
         <div class="modal-content">
             <h3><i class="fas fa-columns"></i> Add New Column</h3>
@@ -263,7 +241,6 @@
         </div>
     </div>
 
-    <!-- Edit Column Modal -->
     <div class="modal" id="editColumnModal">
         <div class="modal-content">
             <h3><i class="fas fa-edit"></i> Edit Column</h3>
@@ -276,12 +253,10 @@
         </div>
     </div>
 
-    <!-- Manage Team Modal -->
     <div class="modal" id="teamModal">
         <div class="modal-content">
             <h3><i class="fas fa-users"></i> Manage Team</h3>
             <div class="team-list" id="teamList">
-                <!-- Team members will be listed here -->
             </div>
             <div class="add-member">
                 <input type="text" id="memberNameInput" placeholder="Member name..." maxlength="30">
@@ -295,7 +270,6 @@
         </div>
     </div>
 
-    <!-- Calendar View Modal -->
     <div class="modal" id="calendarModal">
         <div class="modal-content modal-calendar">
             <div class="calendar-header">
@@ -308,7 +282,6 @@
                 <button id="closeCalendarBtn" class="close-modal-btn"><i class="fas fa-times"></i></button>
             </div>
             <div class="calendar-grid" id="calendarGrid">
-                <!-- Calendar will be rendered here -->
             </div>
             <div class="calendar-legend">
                 <span class="legend-item"><span class="legend-dot high"></span> High Priority</span>
@@ -319,7 +292,6 @@
         </div>
     </div>
 
-    <!-- Notification Settings Modal -->
     <div class="modal" id="notificationModal">
         <div class="modal-content">
             <h3><i class="fas fa-bell"></i> Notification Settings</h3>
@@ -350,7 +322,6 @@
                 </div>
             </div>
             <div class="overdue-summary" id="overdueSummary">
-                <!-- Overdue tasks will be listed here -->
             </div>
             <div class="modal-buttons">
                 <button id="saveNotificationBtn">Save Settings</button>
@@ -359,7 +330,6 @@
         </div>
     </div>
 
-    <!-- Email Summary Modal -->
     <div class="modal" id="emailModal">
         <div class="modal-content">
             <h3><i class="fas fa-envelope"></i> Email Task Summary</h3>
@@ -381,7 +351,6 @@
                     </div>
                 </div>
                 <div class="email-preview" id="emailPreview">
-                    <!-- Preview will be shown here -->
                 </div>
             </div>
             <div class="modal-buttons">

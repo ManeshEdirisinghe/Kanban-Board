@@ -1,27 +1,20 @@
-// Kanban Board Application
-// Advanced Task Manager with Multiple Boards, Custom Columns, Attachments, Comments, Assignments & Time Tracking
 
 class KanbanBoard {
     constructor() {
-        // Initialize boards from localStorage
         this.boards = JSON.parse(localStorage.getItem('kanbanBoards')) || [];
         this.currentBoardId = localStorage.getItem('currentBoardId') || null;
         
-        // Initialize team members
         this.teamMembers = JSON.parse(localStorage.getItem('kanbanTeam')) || [];
         
-        // Current edit state
         this.currentEditId = null;
         this.tempSubtasks = [];
         this.tempAttachments = [];
         this.tempComments = [];
         this.tempTimeEntries = [];
         
-        // Timer state
         this.timerInterval = null;
         this.timerStartTime = null;
 
-        // Available labels with colors
         this.labels = {
             bug: { name: 'Bug', color: '#f85149' },
             feature: { name: 'Feature', color: '#a371f7' },
@@ -30,14 +23,12 @@ class KanbanBoard {
             documentation: { name: 'Documentation', color: '#3fb950' }
         };
 
-        // Default columns configuration
         this.defaultColumns = [
             { id: 'todo', name: 'To Do', icon: 'fa-clipboard-list' },
             { id: 'inprogress', name: 'In Progress', icon: 'fa-spinner' },
             { id: 'done', name: 'Done', icon: 'fa-check-circle' }
         ];
 
-        // Create default board if none exists
         if (this.boards.length === 0) {
             this.createBoard('My Board', true);
         } else if (!this.currentBoardId || !this.boards.find(b => b.id === this.currentBoardId)) {
@@ -45,32 +36,26 @@ class KanbanBoard {
             localStorage.setItem('currentBoardId', this.currentBoardId);
         }
 
-        // Initialize DOM elements
         this.initDOMElements();
         
-        // Initialize the board
         this.init();
     }
 
     initDOMElements() {
-        // DOM Elements - Theme Toggle
         this.themeToggle = document.getElementById('themeToggle');
         this.themeIcon = document.getElementById('themeIcon');
 
-        // DOM Elements - Board Selector
         this.boardMenuBtn = document.getElementById('boardMenuBtn');
         this.boardDropdown = document.getElementById('boardDropdown');
         this.boardList = document.getElementById('boardList');
         this.currentBoardName = document.getElementById('currentBoardName');
         this.newBoardBtn = document.getElementById('newBoardBtn');
 
-        // DOM Elements - New Board Modal
         this.newBoardModal = document.getElementById('newBoardModal');
         this.newBoardInput = document.getElementById('newBoardInput');
         this.createBoardBtn = document.getElementById('createBoardBtn');
         this.cancelBoardBtn = document.getElementById('cancelBoardBtn');
 
-        // DOM Elements - Add Column Modal
         this.addColumnModal = document.getElementById('addColumnModal');
         this.columnNameInput = document.getElementById('columnNameInput');
         this.iconOptions = document.getElementById('iconOptions');
@@ -78,7 +63,6 @@ class KanbanBoard {
         this.cancelColumnBtn = document.getElementById('cancelColumnBtn');
         this.addColumnBtn = document.getElementById('addColumnBtn');
 
-        // DOM Elements - Edit Column Modal
         this.editColumnModal = document.getElementById('editColumnModal');
         this.editColumnNameInput = document.getElementById('editColumnNameInput');
         this.saveColumnBtn = document.getElementById('saveColumnBtn');
@@ -86,7 +70,6 @@ class KanbanBoard {
         this.cancelEditColumnBtn = document.getElementById('cancelEditColumnBtn');
         this.currentEditColumnId = null;
 
-        // DOM Elements - Team Modal
         this.teamModal = document.getElementById('teamModal');
         this.teamList = document.getElementById('teamList');
         this.memberNameInput = document.getElementById('memberNameInput');
@@ -97,7 +80,6 @@ class KanbanBoard {
         this.manageTeamBtn = document.getElementById('manageTeamBtn');
         this.teamAvatars = document.getElementById('teamAvatars');
 
-        // DOM Elements - Add Task
         this.taskInput = document.getElementById('taskInput');
         this.prioritySelect = document.getElementById('prioritySelect');
         this.labelSelect = document.getElementById('labelSelect');
@@ -107,7 +89,6 @@ class KanbanBoard {
         this.addTaskBtn = document.getElementById('addTaskBtn');
         this.clearAllBtn = document.getElementById('clearAllBtn');
 
-        // DOM Elements - Edit Modal
         this.editModal = document.getElementById('editModal');
         this.editTaskInput = document.getElementById('editTaskInput');
         this.editDescriptionInput = document.getElementById('editDescriptionInput');
@@ -118,23 +99,19 @@ class KanbanBoard {
         this.saveEditBtn = document.getElementById('saveEditBtn');
         this.cancelEditBtn = document.getElementById('cancelEditBtn');
 
-        // DOM Elements - Subtasks
         this.subtasksList = document.getElementById('subtasksList');
         this.subtaskInput = document.getElementById('subtaskInput');
         this.addSubtaskBtn = document.getElementById('addSubtaskBtn');
         this.subtasksProgress = document.getElementById('subtasksProgress');
 
-        // DOM Elements - Attachments
         this.attachmentsList = document.getElementById('attachmentsList');
         this.attachmentInput = document.getElementById('attachmentInput');
 
-        // DOM Elements - Comments
         this.commentsList = document.getElementById('commentsList');
         this.commentInput = document.getElementById('commentInput');
         this.addCommentBtn = document.getElementById('addCommentBtn');
         this.commentsCount = document.getElementById('commentsCount');
 
-        // DOM Elements - Time Tracking
         this.totalTimeDisplay = document.getElementById('totalTimeDisplay');
         this.startTimerBtn = document.getElementById('startTimerBtn');
         this.stopTimerBtn = document.getElementById('stopTimerBtn');
@@ -144,14 +121,12 @@ class KanbanBoard {
         this.manualMinutes = document.getElementById('manualMinutes');
         this.addTimeBtn = document.getElementById('addTimeBtn');
 
-        // DOM Elements - Search and Filter
         this.searchInput = document.getElementById('searchInput');
         this.filterPriority = document.getElementById('filterPriority');
         this.filterLabel = document.getElementById('filterLabel');
         this.filterAssignee = document.getElementById('filterAssignee');
         this.clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-        // DOM Elements - Calendar View
         this.calendarViewBtn = document.getElementById('calendarViewBtn');
         this.calendarModal = document.getElementById('calendarModal');
         this.calendarGrid = document.getElementById('calendarGrid');
@@ -161,7 +136,6 @@ class KanbanBoard {
         this.closeCalendarBtn = document.getElementById('closeCalendarBtn');
         this.currentCalendarDate = new Date();
 
-        // DOM Elements - Notifications
         this.notificationBtn = document.getElementById('notificationBtn');
         this.notificationBadge = document.getElementById('notificationBadge');
         this.notificationModal = document.getElementById('notificationModal');
@@ -172,7 +146,6 @@ class KanbanBoard {
         this.saveNotificationBtn = document.getElementById('saveNotificationBtn');
         this.closeNotificationBtn = document.getElementById('closeNotificationBtn');
 
-        // DOM Elements - Email Summary
         this.emailSummaryBtn = document.getElementById('emailSummaryBtn');
         this.emailModal = document.getElementById('emailModal');
         this.emailBoardSelect = document.getElementById('emailBoardSelect');
@@ -185,23 +158,19 @@ class KanbanBoard {
         this.copyEmailBtn = document.getElementById('copyEmailBtn');
         this.closeEmailBtn = document.getElementById('closeEmailBtn');
 
-        // Notification settings
         this.notificationSettings = JSON.parse(localStorage.getItem('kanbanNotifications')) || {
             enabled: false,
             notifyBefore: 1,
             notifyOverdue: true
         };
 
-        // Board container
         this.boardContainer = document.getElementById('board');
     }
 
     init() {
-        // Initialize theme
         this.initTheme();
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
 
-        // Board selector events
         this.boardMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.boardDropdown.classList.toggle('active');
@@ -211,7 +180,6 @@ class KanbanBoard {
         this.createBoardBtn.addEventListener('click', () => this.createBoardFromModal());
         this.cancelBoardBtn.addEventListener('click', () => this.closeNewBoardModal());
 
-        // Column events
         this.addColumnBtn.addEventListener('click', () => this.openAddColumnModal());
         this.createColumnBtn.addEventListener('click', () => this.createColumnFromModal());
         this.cancelColumnBtn.addEventListener('click', () => this.closeAddColumnModal());
@@ -219,7 +187,6 @@ class KanbanBoard {
         this.deleteColumnBtn.addEventListener('click', () => this.deleteColumn());
         this.cancelEditColumnBtn.addEventListener('click', () => this.closeEditColumnModal());
 
-        // Icon picker
         this.iconOptions.querySelectorAll('.icon-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.iconOptions.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
@@ -227,23 +194,19 @@ class KanbanBoard {
             });
         });
 
-        // Team events
         this.manageTeamBtn.addEventListener('click', () => this.openTeamModal());
         this.addMemberBtn.addEventListener('click', () => this.addTeamMember());
         this.closeTeamModalBtn.addEventListener('click', () => this.closeTeamModal());
 
-        // Add Task events
         this.addTaskBtn.addEventListener('click', () => this.addTask());
         this.taskInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.addTask();
         });
         this.clearAllBtn.addEventListener('click', () => this.clearAllTasks());
 
-        // Edit Modal events
         this.saveEditBtn.addEventListener('click', () => this.saveEdit());
         this.cancelEditBtn.addEventListener('click', () => this.closeModal());
 
-        // Subtasks events
         this.addSubtaskBtn.addEventListener('click', () => this.addSubtask());
         this.subtaskInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -252,10 +215,8 @@ class KanbanBoard {
             }
         });
 
-        // Attachments events
         this.attachmentInput.addEventListener('change', (e) => this.handleFileUpload(e));
 
-        // Comments events
         this.addCommentBtn.addEventListener('click', () => this.addComment());
         this.commentInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -264,19 +225,16 @@ class KanbanBoard {
             }
         });
 
-        // Time tracking events
         this.startTimerBtn.addEventListener('click', () => this.startTimer());
         this.stopTimerBtn.addEventListener('click', () => this.stopTimer());
         this.addTimeBtn.addEventListener('click', () => this.addManualTime());
 
-        // Search and Filter events
         this.searchInput.addEventListener('input', () => this.applyFilters());
         this.filterPriority.addEventListener('change', () => this.applyFilters());
         this.filterLabel.addEventListener('change', () => this.applyFilters());
         this.filterAssignee.addEventListener('change', () => this.applyFilters());
         this.clearFiltersBtn.addEventListener('click', () => this.clearFilters());
 
-        // Close modals when clicking outside
         [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
@@ -286,13 +244,11 @@ class KanbanBoard {
             });
         });
 
-        // Calendar events
         this.calendarViewBtn.addEventListener('click', () => this.openCalendarModal());
         this.closeCalendarBtn.addEventListener('click', () => this.closeCalendarModal());
         this.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
         this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
 
-        // Notification events
         this.notificationBtn.addEventListener('click', () => this.openNotificationModal());
         this.saveNotificationBtn.addEventListener('click', () => this.saveNotificationSettings());
         this.closeNotificationBtn.addEventListener('click', () => this.closeNotificationModal());
@@ -306,19 +262,16 @@ class KanbanBoard {
             el.addEventListener('change', () => this.updateEmailPreview());
         });
 
-        // Render board
         this.renderBoardList();
         this.renderTeamAvatars();
         this.updateAssigneeSelects();
         this.renderColumns();
         this.renderAllTasks();
         
-        // Initialize notifications
         this.initNotifications();
         this.updateNotificationBadge();
     }
 
-    // ==================== THEME ====================
     initTheme() {
         const savedTheme = localStorage.getItem('kanbanTheme');
         if (savedTheme) {
@@ -346,7 +299,6 @@ class KanbanBoard {
         this.setTheme(currentTheme === 'dark' ? 'light' : 'dark');
     }
 
-    // ==================== BOARDS ====================
     getCurrentBoard() {
         return this.boards.find(b => b.id === this.currentBoardId);
     }
@@ -440,7 +392,6 @@ class KanbanBoard {
         this.updateNotificationBadge();
     }
 
-    // ==================== COLUMNS ====================
     renderColumns() {
         const board = this.getCurrentBoard();
         if (!board) return;
@@ -555,7 +506,6 @@ class KanbanBoard {
         this.closeEditColumnModal();
     }
 
-    // ==================== TEAM MEMBERS ====================
     renderTeamAvatars() {
         this.teamAvatars.innerHTML = '';
         this.teamMembers.slice(0, 5).forEach(member => {
@@ -580,7 +530,6 @@ class KanbanBoard {
         this.assigneeSelect.innerHTML = options;
         this.editAssigneeSelect.innerHTML = options;
         
-        // Update filter
         this.filterAssignee.innerHTML = '<option value="all">All Assignees</option>' + 
             this.teamMembers.map(m => `<option value="${m.id}">${this.escapeHtml(m.name)}</option>`).join('');
     }
@@ -654,7 +603,6 @@ class KanbanBoard {
         return this.teamMembers.find(m => m.id === memberId);
     }
 
-    // ==================== TASKS ====================
     generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
@@ -692,7 +640,6 @@ class KanbanBoard {
         this.renderTask(task, true);
         this.updateCounts();
 
-        // Clear inputs
         this.taskInput.value = '';
         this.descriptionInput.value = '';
         this.labelSelect.value = '';
@@ -750,7 +697,6 @@ class KanbanBoard {
         const priorityLabels = { low: 'Low', medium: 'Medium', high: 'High' };
         const createdDate = new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-        // Build components
         let dueDateHtml = '';
         if (task.dueDate) {
             const dueDate = new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -924,7 +870,6 @@ class KanbanBoard {
         });
     }
 
-    // ==================== DRAG & DROP ====================
     setupDragEvents(taskCard, taskId) {
         taskCard.addEventListener('dragstart', (e) => {
             taskCard.classList.add('dragging');
@@ -978,7 +923,6 @@ class KanbanBoard {
         }
     }
 
-    // ==================== EDIT MODAL ====================
     openEditModal(taskId) {
         const board = this.getCurrentBoard();
         const task = board.tasks.find(t => t.id === taskId);
@@ -1042,7 +986,6 @@ class KanbanBoard {
         this.tempTimeEntries = [];
     }
 
-    // ==================== SUBTASKS ====================
     addSubtask() {
         const text = this.subtaskInput.value.trim();
         if (!text) {
@@ -1078,7 +1021,6 @@ class KanbanBoard {
         this.subtasksProgress.textContent = `${completed}/${this.tempSubtasks.length}`;
     }
 
-    // ==================== ATTACHMENTS ====================
     handleFileUpload(e) {
         const files = Array.from(e.target.files);
         files.forEach(file => {
@@ -1124,7 +1066,6 @@ class KanbanBoard {
         });
     }
 
-    // ==================== COMMENTS ====================
     addComment() {
         const text = this.commentInput.value.trim();
         if (!text) {
@@ -1164,7 +1105,6 @@ class KanbanBoard {
         this.commentsCount.textContent = this.tempComments.length;
     }
 
-    // ==================== TIME TRACKING ====================
     renderTimeTracking() {
         const total = this.getTotalTime(this.tempTimeEntries);
         this.totalTimeDisplay.textContent = this.formatTime(total);
@@ -1248,7 +1188,6 @@ class KanbanBoard {
         this.renderTimeTracking();
     }
 
-    // ==================== CALENDAR VIEW ====================
     openCalendarModal() {
         this.currentCalendarDate = new Date();
         this.renderCalendar();
@@ -1268,20 +1207,16 @@ class KanbanBoard {
         const year = this.currentCalendarDate.getFullYear();
         const month = this.currentCalendarDate.getMonth();
         
-        // Update title
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                            'July', 'August', 'September', 'October', 'November', 'December'];
         this.calendarTitle.textContent = `${monthNames[month]} ${year}`;
         
-        // Get first day and days in month
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const daysInPrevMonth = new Date(year, month, 0).getDate();
         
-        // Get all tasks with due dates
         const tasksWithDates = this.getAllTasksWithDueDates();
         
-        // Build calendar grid
         let html = '';
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         dayNames.forEach(day => {
@@ -1291,13 +1226,11 @@ class KanbanBoard {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        // Previous month days
         for (let i = firstDay - 1; i >= 0; i--) {
             const day = daysInPrevMonth - i;
             html += `<div class="calendar-day other-month"><span class="day-number">${day}</span></div>`;
         }
         
-        // Current month days
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
             date.setHours(0, 0, 0, 0);
@@ -1325,7 +1258,6 @@ class KanbanBoard {
             </div>`;
         }
         
-        // Next month days
         const totalCells = firstDay + daysInMonth;
         const remainingCells = (7 - (totalCells % 7)) % 7;
         for (let day = 1; day <= remainingCells; day++) {
@@ -1334,7 +1266,6 @@ class KanbanBoard {
         
         this.calendarGrid.innerHTML = html;
         
-        // Add click events to calendar tasks
         this.calendarGrid.querySelectorAll('.calendar-task').forEach(taskEl => {
             taskEl.addEventListener('click', () => {
                 const taskId = taskEl.dataset.taskId;
@@ -1368,16 +1299,13 @@ class KanbanBoard {
         return `${year}-${month}-${day}`;
     }
 
-    // ==================== NOTIFICATIONS ====================
     initNotifications() {
-        // Load settings
         this.enableNotifications.checked = this.notificationSettings.enabled;
         this.notifyBefore.value = this.notificationSettings.notifyBefore;
         this.notifyOverdue.checked = this.notificationSettings.notifyOverdue;
         
-        // Check for due tasks periodically
         this.checkDueTasks();
-        setInterval(() => this.checkDueTasks(), 60000); // Check every minute
+        setInterval(() => this.checkDueTasks(), 60000); 
     }
 
     async requestNotificationPermission() {
@@ -1666,7 +1594,6 @@ class KanbanBoard {
         });
     }
 
-    // ==================== UTILITIES ====================
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -1681,10 +1608,8 @@ class KanbanBoard {
     }
 }
 
-// Shake animation
 const style = document.createElement('style');
 style.textContent = `@keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-5px)}20%,40%,60%,80%{transform:translateX(5px)}}`;
 document.head.appendChild(style);
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => new KanbanBoard());
