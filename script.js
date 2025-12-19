@@ -42,6 +42,36 @@ class KanbanBoard {
     }
 
     initDOMElements() {
+        // Navigation Sidebar
+        this.navSidebar = document.getElementById('navSidebar');
+        this.navToggle = document.getElementById('navToggle');
+        this.navBackdrop = document.getElementById('navBackdrop');
+        this.navDashboard = document.getElementById('navDashboard');
+        this.navMyTasks = document.getElementById('navMyTasks');
+        this.navHighPriority = document.getElementById('navHighPriority');
+        this.navDueThisWeek = document.getElementById('navDueThisWeek');
+        this.navOverdue = document.getElementById('navOverdue');
+        this.navAddBoard = document.getElementById('navAddBoard');
+        this.navManageTeam = document.getElementById('navManageTeam');
+        this.navBoardsList = document.getElementById('navBoardsList');
+        this.navTeamList = document.getElementById('navTeamList');
+        this.navTheme = document.getElementById('navTheme');
+        this.navNotifications = document.getElementById('navNotifications');
+        this.navHelp = document.getElementById('navHelp');
+        
+        // Analytics elements
+        this.analyticsTotalTasks = document.getElementById('analyticsTotalTasks');
+        this.analyticsCompleted = document.getElementById('analyticsCompleted');
+        this.analyticsInProgress = document.getElementById('analyticsInProgress');
+        this.analyticsProgressFill = document.getElementById('analyticsProgressFill');
+        this.analyticsProgressLabel = document.getElementById('analyticsProgressLabel');
+        
+        // Badge counters
+        this.myTasksBadge = document.getElementById('myTasksBadge');
+        this.highPriorityBadge = document.getElementById('highPriorityBadge');
+        this.dueThisWeekBadge = document.getElementById('dueThisWeekBadge');
+        this.overdueBadge = document.getElementById('overdueBadge');
+
         this.themeToggle = document.getElementById('themeToggle');
         this.themeIcon = document.getElementById('themeIcon');
         this.themeCustomizeBtn = document.getElementById('themeCustomizeBtn');
@@ -185,6 +215,25 @@ class KanbanBoard {
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
         this.themeCustomizeBtn.addEventListener('click', () => this.openThemeCustomizeModal());
 
+        // Navigation Sidebar Events
+        this.navToggle.addEventListener('click', () => this.toggleSidebar());
+        this.navBackdrop.addEventListener('click', () => this.closeSidebar());
+        
+        // Quick access filters
+        this.navMyTasks.addEventListener('click', () => this.filterMyTasks());
+        this.navHighPriority.addEventListener('click', () => this.filterHighPriority());
+        this.navDueThisWeek.addEventListener('click', () => this.filterDueThisWeek());
+        this.navOverdue.addEventListener('click', () => this.filterOverdue());
+        this.navDashboard.addEventListener('click', () => this.clearFilters());
+        
+        // Board and team management from sidebar
+        this.navAddBoard.addEventListener('click', () => this.openNewBoardModal());
+        this.navManageTeam.addEventListener('click', () => this.openTeamModal());
+        
+        // Settings from sidebar
+        this.navTheme.addEventListener('click', () => this.openThemeCustomizeModal());
+        this.navNotifications.addEventListener('click', () => this.openNotificationModal());
+
         this.boardMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.boardDropdown.classList.toggle('active');
@@ -294,6 +343,9 @@ class KanbanBoard {
         this.renderColumns();
         this.renderAllTasks();
         
+        // Update sidebar navigation
+        this.renderNavigation();
+        this.updateNavigationAnalytics();
         this.initNotifications();
         this.updateNotificationBadge();
     }
@@ -506,6 +558,8 @@ class KanbanBoard {
     saveBoards() {
         localStorage.setItem('kanbanBoards', JSON.stringify(this.boards));
         this.updateNotificationBadge();
+        this.updateNavigationBadges();
+        this.updateNavigationAnalytics();
     }
 
     renderColumns() {
@@ -1714,6 +1768,173 @@ class KanbanBoard {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // ==================== NAVIGATION SIDEBAR ====================
+    toggleSidebar() {
+        this.navSidebar.classList.toggle('collapsed');
+    }
+
+    closeSidebar() {
+        this.navSidebar.classList.add('hidden');
+        this.navBackdrop.classList.remove('visible');
+    }
+
+    renderNavigation() {
+        this.renderNavBoards();
+        this.renderNavTeam();
+        this.updateNavigationBadges();
+    }
+
+    renderNavBoards() {
+        this.navBoardsList.innerHTML = '';
+        this.boards.forEach(board => {
+            const item = document.createElement('button');
+            item.className = `nav-board-item${board.id === this.currentBoardId ? ' active' : ''}`;
+            item.innerHTML = `
+                <i class="fas fa-layer-group"></i>
+                <span>${this.escapeHtml(board.name)}</span>
+            `;
+            item.addEventListener('click', () => this.switchBoard(board.id));
+            this.navBoardsList.appendChild(item);
+        });
+    }
+
+    renderNavTeam() {
+        this.navTeamList.innerHTML = '';
+        this.teamMembers.slice(0, 6).forEach(member => {
+            const item = document.createElement('div');
+            item.className = 'nav-team-item';
+            item.innerHTML = `
+                <div class="nav-team-avatar" style="background-color: ${member.color}">
+                    ${member.initials}
+                </div>
+                <span>${this.escapeHtml(member.name)}</span>
+            `;
+            this.navTeamList.appendChild(item);
+        });
+    }
+
+    updateNavigationBadges() {
+        const board = this.getCurrentBoard();
+        if (!board) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        let myTasksCount = 0;
+        let highPriorityCount = 0;
+        let dueThisWeekCount = 0;
+        let overdueCount = 0;
+
+        board.tasks.forEach(task => {
+            if (task.assignee) myTasksCount++;
+            if (task.priority === 'high') highPriorityCount++;
+            
+            if (task.dueDate) {
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (dueDate < weekEnd && dueDate >= today) dueThisWeekCount++;
+                if (dueDate < today && task.status !== board.columns[board.columns.length - 1].id) overdueCount++;
+            }
+        });
+
+        this.myTasksBadge.textContent = myTasksCount;
+        this.highPriorityBadge.textContent = highPriorityCount;
+        this.dueThisWeekBadge.textContent = dueThisWeekCount;
+        this.overdueBadge.textContent = overdueCount;
+    }
+
+    updateNavigationAnalytics() {
+        const board = this.getCurrentBoard();
+        if (!board) return;
+
+        const lastColumnId = board.columns[board.columns.length - 1]?.id;
+        const total = board.tasks.length;
+        const completed = board.tasks.filter(t => t.status === lastColumnId).length;
+        const inProgress = board.tasks.filter(t => t.status !== board.columns[0].id && t.status !== lastColumnId).length;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        this.analyticsTotalTasks.textContent = total;
+        this.analyticsCompleted.textContent = completed;
+        this.analyticsInProgress.textContent = inProgress;
+        this.analyticsProgressFill.style.width = percentage + '%';
+        this.analyticsProgressLabel.textContent = percentage + '% Complete';
+    }
+
+    filterMyTasks() {
+        this.searchInput.value = '';
+        this.filterPriority.value = 'all';
+        this.filterLabel.value = 'all';
+        this.filterAssignee.value = this.teamMembers.find(m => m.name === 'You')?.id || 'all';
+        this.applyFilters();
+    }
+
+    filterHighPriority() {
+        this.searchInput.value = '';
+        this.filterPriority.value = 'high';
+        this.filterLabel.value = 'all';
+        this.filterAssignee.value = 'all';
+        this.applyFilters();
+    }
+
+    filterDueThisWeek() {
+        this.searchInput.value = '';
+        this.filterPriority.value = 'all';
+        this.filterLabel.value = 'all';
+        this.filterAssignee.value = 'all';
+        const board = this.getCurrentBoard();
+        if (!board) return;
+
+        const today = new Date();
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        board.columns.forEach(col => {
+            const list = document.getElementById(`${col.id}-list`);
+            if (list) list.innerHTML = '';
+        });
+
+        board.tasks.forEach(task => {
+            if (task.dueDate) {
+                const dueDate = new Date(task.dueDate);
+                if (dueDate >= today && dueDate <= weekEnd) {
+                    this.renderTask(task);
+                }
+            }
+        });
+        this.updateCounts();
+    }
+
+    filterOverdue() {
+        this.searchInput.value = '';
+        this.filterPriority.value = 'all';
+        this.filterLabel.value = 'all';
+        this.filterAssignee.value = 'all';
+        const board = this.getCurrentBoard();
+        if (!board) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lastColumnId = board.columns[board.columns.length - 1]?.id;
+        
+        board.columns.forEach(col => {
+            const list = document.getElementById(`${col.id}-list`);
+            if (list) list.innerHTML = '';
+        });
+
+        board.tasks.forEach(task => {
+            if (task.dueDate && task.status !== lastColumnId) {
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (dueDate < today) {
+                    this.renderTask(task);
+                }
+            }
+        });
+        this.updateCounts();
     }
 
     shakeElement(element) {
