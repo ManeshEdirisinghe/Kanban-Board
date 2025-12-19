@@ -44,6 +44,19 @@ class KanbanBoard {
     initDOMElements() {
         this.themeToggle = document.getElementById('themeToggle');
         this.themeIcon = document.getElementById('themeIcon');
+        this.themeCustomizeBtn = document.getElementById('themeCustomizeBtn');
+        this.themeCustomizeModal = document.getElementById('themeCustomizeModal');
+        this.primaryColorInput = document.getElementById('primaryColorInput');
+        this.secondaryColorInput = document.getElementById('secondaryColorInput');
+        this.accentColorInput = document.getElementById('accentColorInput');
+        this.primaryColorHex = document.getElementById('primaryColorHex');
+        this.secondaryColorHex = document.getElementById('secondaryColorHex');
+        this.accentColorHex = document.getElementById('accentColorHex');
+        this.boardBrandingInput = document.getElementById('boardBrandingInput');
+        this.saveThemeBtn = document.getElementById('saveThemeBtn');
+        this.resetThemeBtn = document.getElementById('resetThemeBtn');
+        this.closeThemeBtn = document.getElementById('closeThemeBtn');
+        this.themePresets = document.getElementById('themePresets');
 
         this.boardMenuBtn = document.getElementById('boardMenuBtn');
         this.boardDropdown = document.getElementById('boardDropdown');
@@ -170,6 +183,7 @@ class KanbanBoard {
     init() {
         this.initTheme();
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
+        this.themeCustomizeBtn.addEventListener('click', () => this.openThemeCustomizeModal());
 
         this.boardMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -235,7 +249,7 @@ class KanbanBoard {
         this.filterAssignee.addEventListener('change', () => this.applyFilters());
         this.clearFiltersBtn.addEventListener('click', () => this.clearFilters());
 
-        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal].forEach(modal => {
+        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal, this.themeCustomizeModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
@@ -262,6 +276,18 @@ class KanbanBoard {
             el.addEventListener('change', () => this.updateEmailPreview());
         });
 
+        this.saveThemeBtn.addEventListener('click', () => this.saveCustomTheme());
+        this.resetThemeBtn.addEventListener('click', () => this.resetTheme());
+        this.closeThemeBtn.addEventListener('click', () => this.closeThemeCustomizeModal());
+        
+        this.primaryColorInput.addEventListener('input', () => this.updateColorPreview());
+        this.secondaryColorInput.addEventListener('input', () => this.updateColorPreview());
+        this.accentColorInput.addEventListener('input', () => this.updateColorPreview());
+
+        this.themePresets.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.applyPreset(btn.dataset.preset));
+        });
+
         this.renderBoardList();
         this.renderTeamAvatars();
         this.updateAssigneeSelects();
@@ -280,6 +306,20 @@ class KanbanBoard {
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             this.setTheme(prefersDark ? 'dark' : 'light');
         }
+        this.loadCustomColors();
+    }
+
+    loadCustomColors() {
+        const customTheme = JSON.parse(localStorage.getItem('kanbanCustomTheme')) || {};
+        if (customTheme.primary) {
+            document.documentElement.style.setProperty('--accent-blue', customTheme.primary);
+        }
+        if (customTheme.secondary) {
+            document.documentElement.style.setProperty('--accent-purple', customTheme.secondary);
+        }
+        if (customTheme.accent) {
+            document.documentElement.style.setProperty('--accent-cyan', customTheme.accent);
+        }
     }
 
     setTheme(theme) {
@@ -297,6 +337,82 @@ class KanbanBoard {
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         this.setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    openThemeCustomizeModal() {
+        const customTheme = JSON.parse(localStorage.getItem('kanbanCustomTheme')) || {};
+        this.primaryColorInput.value = customTheme.primary || '#3b82f6';
+        this.secondaryColorInput.value = customTheme.secondary || '#a855f7';
+        this.accentColorInput.value = customTheme.accent || '#06b6d4';
+        this.boardBrandingInput.value = customTheme.branding || '';
+        this.updateColorPreview();
+        this.themeCustomizeModal.classList.add('active');
+    }
+
+    closeThemeCustomizeModal() {
+        this.themeCustomizeModal.classList.remove('active');
+    }
+
+    updateColorPreview() {
+        this.primaryColorHex.textContent = this.primaryColorInput.value;
+        this.secondaryColorHex.textContent = this.secondaryColorInput.value;
+        this.accentColorHex.textContent = this.accentColorInput.value;
+    }
+
+    applyPreset(preset) {
+        const presets = {
+            dark: { primary: '#3b82f6', secondary: '#a855f7', accent: '#06b6d4' },
+            light: { primary: '#2563eb', secondary: '#9333ea', accent: '#0891b2' },
+            blue: { primary: '#0ea5e9', secondary: '#3b82f6', accent: '#06b6d4' },
+            purple: { primary: '#a855f7', secondary: '#d946ef', accent: '#ec4899' },
+            green: { primary: '#10b981', secondary: '#14b8a6', accent: '#06b6d4' }
+        };
+        
+        if (presets[preset]) {
+            this.primaryColorInput.value = presets[preset].primary;
+            this.secondaryColorInput.value = presets[preset].secondary;
+            this.accentColorInput.value = presets[preset].accent;
+            this.updateColorPreview();
+            
+            this.themePresets.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.preset === preset);
+            });
+        }
+    }
+
+    saveCustomTheme() {
+        const customTheme = {
+            primary: this.primaryColorInput.value,
+            secondary: this.secondaryColorInput.value,
+            accent: this.accentColorInput.value,
+            branding: this.boardBrandingInput.value || ''
+        };
+        
+        localStorage.setItem('kanbanCustomTheme', JSON.stringify(customTheme));
+        
+        document.documentElement.style.setProperty('--accent-blue', customTheme.primary);
+        document.documentElement.style.setProperty('--accent-purple', customTheme.secondary);
+        document.documentElement.style.setProperty('--accent-cyan', customTheme.accent);
+        
+        this.closeThemeCustomizeModal();
+        this.renderAllTasks();
+    }
+
+    resetTheme() {
+        if (confirm('Reset to default theme colors?')) {
+            localStorage.removeItem('kanbanCustomTheme');
+            this.primaryColorInput.value = '#3b82f6';
+            this.secondaryColorInput.value = '#a855f7';
+            this.accentColorInput.value = '#06b6d4';
+            this.boardBrandingInput.value = '';
+            this.updateColorPreview();
+            
+            document.documentElement.style.setProperty('--accent-blue', '#3b82f6');
+            document.documentElement.style.setProperty('--accent-purple', '#a855f7');
+            document.documentElement.style.setProperty('--accent-cyan', '#06b6d4');
+            
+            this.renderAllTasks();
+        }
     }
 
     getCurrentBoard() {
