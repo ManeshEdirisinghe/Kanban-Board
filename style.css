@@ -3109,6 +3109,31 @@ body {
     flex-shrink: 0;
 }
 
+.nav-team-delete {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    transition: var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.nav-team-item:hover .nav-team-delete {
+    display: flex;
+}
+
+.nav-team-delete:hover {
+    background: var(--priority-high);
+    color: white;
+}
+
 .nav-analytics {
     display: flex;
     flex-direction: column;

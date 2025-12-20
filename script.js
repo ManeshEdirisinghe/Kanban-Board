@@ -762,6 +762,7 @@ class KanbanBoard {
         this.saveTeam();
         this.renderTeamList();
         this.renderTeamAvatars();
+        this.renderNavTeam();
         this.updateAssigneeSelects();
     }
 
@@ -1810,7 +1811,16 @@ class KanbanBoard {
                     ${member.initials}
                 </div>
                 <span>${this.escapeHtml(member.name)}</span>
+                <button class="nav-team-delete" title="Remove member" data-member-id="${member.id}">
+                    <i class="fas fa-times"></i>
+                </button>
             `;
+            item.querySelector('.nav-team-delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm(`Remove ${this.escapeHtml(member.name)} from team?`)) {
+                    this.removeTeamMember(member.id);
+                }
+            });
             this.navTeamList.appendChild(item);
         });
     }
