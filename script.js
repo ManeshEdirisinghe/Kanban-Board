@@ -5,6 +5,8 @@ class KanbanBoard {
         this.currentBoardId = localStorage.getItem('currentBoardId') || null;
         
         this.teamMembers = JSON.parse(localStorage.getItem('kanbanTeam')) || [];
+        this.taskTemplates = JSON.parse(localStorage.getItem('kanbanTaskTemplates')) || [];
+        this.currentEditingTemplateId = null;
         
         this.currentEditId = null;
         this.tempSubtasks = [];
@@ -58,6 +60,7 @@ class KanbanBoard {
         this.navTheme = document.getElementById('navTheme');
         this.navNotifications = document.getElementById('navNotifications');
         this.navHelp = document.getElementById('navHelp');
+        this.navTemplates = document.getElementById('navTemplates');
         
         // Analytics elements
         this.analyticsTotalTasks = document.getElementById('analyticsTotalTasks');
@@ -71,6 +74,24 @@ class KanbanBoard {
         this.highPriorityBadge = document.getElementById('highPriorityBadge');
         this.dueThisWeekBadge = document.getElementById('dueThisWeekBadge');
         this.overdueBadge = document.getElementById('overdueBadge');
+
+        // Task Templates
+        this.taskTemplatesModal = document.getElementById('taskTemplatesModal');
+        this.templateEditorModal = document.getElementById('templateEditorModal');
+        this.templatesList = document.getElementById('templatesList');
+        this.templateSearchInput = document.getElementById('templateSearchInput');
+        this.createTemplateBtn = document.getElementById('createTemplateBtn');
+        this.closeTemplatesBtn = document.getElementById('closeTemplatesBtn');
+        this.templateNameInput = document.getElementById('templateNameInput');
+        this.templateDescriptionInput = document.getElementById('templateDescriptionInput');
+        this.templateTitleInput = document.getElementById('templateTitleInput');
+        this.templateTaskDescInput = document.getElementById('templateTaskDescInput');
+        this.templatePriorityInput = document.getElementById('templatePriorityInput');
+        this.templateLabelsInput = document.getElementById('templateLabelsInput');
+        this.templateDueDateInput = document.getElementById('templateDueDateInput');
+        this.saveTemplateBtn = document.getElementById('saveTemplateBtn');
+        this.cancelTemplateBtn = document.getElementById('cancelTemplateBtn');
+        this.templateEditorTitle = document.getElementById('templateEditorTitle');
 
         this.themeToggle = document.getElementById('themeToggle');
         this.themeIcon = document.getElementById('themeIcon');
@@ -233,6 +254,7 @@ class KanbanBoard {
         // Settings from sidebar
         this.navTheme.addEventListener('click', () => this.openThemeCustomizeModal());
         this.navNotifications.addEventListener('click', () => this.openNotificationModal());
+        this.navTemplates.addEventListener('click', () => this.openTemplatesModal());
 
         this.boardMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -298,7 +320,7 @@ class KanbanBoard {
         this.filterAssignee.addEventListener('change', () => this.applyFilters());
         this.clearFiltersBtn.addEventListener('click', () => this.clearFilters());
 
-        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal, this.themeCustomizeModal].forEach(modal => {
+        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal, this.themeCustomizeModal, this.taskTemplatesModal, this.templateEditorModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
@@ -306,6 +328,13 @@ class KanbanBoard {
                 }
             });
         });
+
+        // Task Templates Events
+        this.createTemplateBtn.addEventListener('click', () => this.openCreateTemplate());
+        this.saveTemplateBtn.addEventListener('click', () => this.saveTemplate());
+        this.cancelTemplateBtn.addEventListener('click', () => this.closeTemplateEditor());
+        this.closeTemplatesBtn.addEventListener('click', () => this.closeTemplatesModal());
+        this.templateSearchInput.addEventListener('input', () => this.filterTemplates());
 
         this.calendarViewBtn.addEventListener('click', () => this.openCalendarModal());
         this.closeCalendarBtn.addEventListener('click', () => this.closeCalendarModal());
@@ -1952,6 +1981,186 @@ class KanbanBoard {
         element.offsetHeight;
         element.style.animation = 'shake 0.5s ease';
         setTimeout(() => element.style.animation = '', 500);
+    }
+
+    // ==================== TASK TEMPLATES ====================
+    openTemplatesModal() {
+        this.renderTemplatesList();
+        this.taskTemplatesModal.classList.add('active');
+    }
+
+    closeTemplatesModal() {
+        this.taskTemplatesModal.classList.remove('active');
+    }
+
+    openCreateTemplate() {
+        this.currentEditingTemplateId = null;
+        this.templateNameInput.value = '';
+        this.templateDescriptionInput.value = '';
+        this.templateTitleInput.value = '';
+        this.templateTaskDescInput.value = '';
+        this.templatePriorityInput.value = 'medium';
+        this.templateLabelsInput.value = '';
+        this.templateDueDateInput.value = '';
+        this.templateEditorTitle.textContent = 'Create Template';
+        this.templateEditorModal.classList.add('active');
+    }
+
+    closeTemplateEditor() {
+        this.templateEditorModal.classList.remove('active');
+        this.currentEditingTemplateId = null;
+    }
+
+    saveTemplate() {
+        const name = this.templateNameInput.value.trim();
+        const title = this.templateTitleInput.value.trim();
+
+        if (!name || !title) {
+            alert('Template name and task title are required');
+            return;
+        }
+
+        const template = {
+            id: this.currentEditingTemplateId || this.generateId(),
+            name: name,
+            description: this.templateDescriptionInput.value.trim(),
+            title: title,
+            description: this.templateTaskDescInput.value.trim(),
+            priority: this.templatePriorityInput.value,
+            labels: this.templateLabelsInput.value.split(',').map(l => l.trim()).filter(l => l),
+            dueDateDays: parseInt(this.templateDueDateInput.value) || 0,
+            createdAt: new Date().toISOString()
+        };
+
+        if (this.currentEditingTemplateId) {
+            const index = this.taskTemplates.findIndex(t => t.id === this.currentEditingTemplateId);
+            if (index > -1) {
+                this.taskTemplates[index] = template;
+            }
+        } else {
+            this.taskTemplates.push(template);
+        }
+
+        this.saveTaskTemplates();
+        this.closeTemplateEditor();
+        this.renderTemplatesList();
+    }
+
+    saveTaskTemplates() {
+        localStorage.setItem('kanbanTaskTemplates', JSON.stringify(this.taskTemplates));
+    }
+
+    renderTemplatesList() {
+        this.templatesList.innerHTML = '';
+        
+        if (this.taskTemplates.length === 0) {
+            this.templatesList.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 32px; color: var(--text-muted);">No templates yet. Create one to get started!</div>';
+            return;
+        }
+
+        this.taskTemplates.forEach(template => {
+            const card = document.createElement('div');
+            card.className = 'template-card';
+            card.innerHTML = `
+                <div class="template-card-header">
+                    <div class="template-card-title">${this.escapeHtml(template.name)}</div>
+                    <div class="template-card-actions">
+                        <button class="template-card-btn" title="Use template" data-template-id="${template.id}">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="template-card-btn edit" title="Edit" data-template-id="${template.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="template-card-btn delete" title="Delete" data-template-id="${template.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                ${template.description ? `<div class="template-card-description">${this.escapeHtml(template.description)}</div>` : ''}
+                <div class="template-card-meta">
+                    <span class="template-meta-badge"><i class="fas fa-heading"></i> ${this.escapeHtml(template.title)}</span>
+                    <span class="template-meta-badge"><i class="fas fa-flag"></i> ${template.priority}</span>
+                    ${template.labels.length > 0 ? `<span class="template-meta-badge"><i class="fas fa-tag"></i> ${template.labels.length} labels</span>` : ''}
+                </div>
+            `;
+
+            card.querySelector('[data-template-id]:not(.edit):not(.delete)').addEventListener('click', () => this.createTaskFromTemplate(template.id));
+            card.querySelector('.edit').addEventListener('click', () => this.editTemplate(template.id));
+            card.querySelector('.delete').addEventListener('click', () => this.deleteTemplate(template.id));
+
+            this.templatesList.appendChild(card);
+        });
+    }
+
+    filterTemplates() {
+        const searchTerm = this.templateSearchInput.value.toLowerCase();
+        const cards = this.templatesList.querySelectorAll('.template-card');
+        
+        cards.forEach(card => {
+            const title = card.querySelector('.template-card-title').textContent.toLowerCase();
+            const desc = card.querySelector('.template-card-description')?.textContent.toLowerCase() || '';
+            const matches = title.includes(searchTerm) || desc.includes(searchTerm);
+            card.style.display = matches ? '' : 'none';
+        });
+    }
+
+    editTemplate(templateId) {
+        const template = this.taskTemplates.find(t => t.id === templateId);
+        if (!template) return;
+
+        this.currentEditingTemplateId = templateId;
+        this.templateNameInput.value = template.name;
+        this.templateDescriptionInput.value = template.description || '';
+        this.templateTitleInput.value = template.title;
+        this.templateTaskDescInput.value = template.description || '';
+        this.templatePriorityInput.value = template.priority;
+        this.templateLabelsInput.value = template.labels.join(', ');
+        this.templateDueDateInput.value = template.dueDateDays || '';
+        this.templateEditorTitle.textContent = 'Edit Template';
+        this.templateEditorModal.classList.add('active');
+    }
+
+    deleteTemplate(templateId) {
+        if (confirm('Delete this template?')) {
+            this.taskTemplates = this.taskTemplates.filter(t => t.id !== templateId);
+            this.saveTaskTemplates();
+            this.renderTemplatesList();
+        }
+    }
+
+    createTaskFromTemplate(templateId) {
+        const template = this.taskTemplates.find(t => t.id === templateId);
+        if (!template) return;
+
+        const board = this.getCurrentBoard();
+        if (!board) return;
+
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + template.dueDateDays);
+
+        const newTask = {
+            id: this.generateId(),
+            title: template.title,
+            description: template.description,
+            status: board.columns[0].id,
+            priority: template.priority,
+            assignee: '',
+            dueDate: dueDate.toISOString().split('T')[0],
+            subtasks: [],
+            comments: [],
+            attachments: [],
+            labels: template.labels,
+            timeEntries: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        board.tasks.push(newTask);
+        this.saveBoards();
+        this.renderAllTasks();
+        this.closeTemplatesModal();
+        
+        alert(`Task created from template "${this.escapeHtml(template.name)}"`);
     }
 }
 
