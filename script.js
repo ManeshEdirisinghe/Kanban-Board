@@ -157,6 +157,7 @@ class KanbanBoard {
         this.prioritySelect = document.getElementById('prioritySelect');
         this.labelSelect = document.getElementById('labelSelect');
         this.dueDateInput = document.getElementById('dueDateInput');
+        this.startDateInput = document.getElementById('startDateInput');
         this.descriptionInput = document.getElementById('descriptionInput');
         this.assigneeSelect = document.getElementById('assigneeSelect');
         this.addTaskBtn = document.getElementById('addTaskBtn');
@@ -168,6 +169,7 @@ class KanbanBoard {
         this.editPrioritySelect = document.getElementById('editPrioritySelect');
         this.editLabelSelect = document.getElementById('editLabelSelect');
         this.editDueDateInput = document.getElementById('editDueDateInput');
+        this.editStartDateInput = document.getElementById('editStartDateInput');
         this.editAssigneeSelect = document.getElementById('editAssigneeSelect');
         this.saveEditBtn = document.getElementById('saveEditBtn');
         this.cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -839,6 +841,7 @@ class KanbanBoard {
             description: this.descriptionInput.value.trim(),
             priority: this.prioritySelect.value,
             label: this.labelSelect.value,
+            startDate: this.startDateInput.value || null,
             dueDate: this.dueDateInput.value || null,
             assignee: this.assigneeSelect.value || null,
             status: firstColumn.id,
@@ -858,6 +861,7 @@ class KanbanBoard {
         this.descriptionInput.value = '';
         this.labelSelect.value = '';
         this.dueDateInput.value = '';
+        this.startDateInput.value = '';
         this.assigneeSelect.value = '';
         this.taskInput.focus();
     }
@@ -1147,6 +1151,7 @@ class KanbanBoard {
         this.editDescriptionInput.value = task.description || '';
         this.editPrioritySelect.value = task.priority;
         this.editLabelSelect.value = task.label || '';
+        this.editStartDateInput.value = task.startDate || '';
         this.editDueDateInput.value = task.dueDate || '';
         this.editAssigneeSelect.value = task.assignee || '';
 
@@ -1178,6 +1183,7 @@ class KanbanBoard {
             task.description = this.editDescriptionInput.value.trim();
             task.priority = this.editPrioritySelect.value;
             task.label = this.editLabelSelect.value;
+            task.startDate = this.editStartDateInput.value || null;
             task.dueDate = this.editDueDateInput.value || null;
             task.assignee = this.editAssigneeSelect.value || null;
             task.subtasks = [...this.tempSubtasks];
@@ -2269,7 +2275,7 @@ class KanbanBoard {
                 taskItem.className = 'gantt-task-item';
                 taskItem.innerHTML = `
                     <div class="gantt-task-priority ${task.priority || 'medium'}"></div>
-                    <span class="gantt-task-label" title="${this.escapeHtml(task.title)}">${this.escapeHtml(task.title.substring(0, 25))}</span>
+                    <span class="gantt-task-label" title="${this.escapeHtml(task.text)}">${this.escapeHtml(task.text.substring(0, 25))}</span>
                 `;
                 this.ganttTaskList.appendChild(taskItem);
             });
@@ -2280,13 +2286,14 @@ class KanbanBoard {
         this.ganttTimelineBody.innerHTML = '';
         
         const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 7);
-        const totalDays = 97;
-        const pixelsPerDay = 100 / 30;
+        today.setHours(0, 0, 0, 0);
+        const chartStart = new Date(today);
+        chartStart.setDate(chartStart.getDate() - 7);
+        
+        const pxPerDay = 3.3;
 
-        const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
-        const todayPixels = todayOffset * pixelsPerDay;
+        const todayOffset = Math.floor((today - chartStart) / (1000 * 60 * 60 * 24));
+        const todayPixels = todayOffset * pxPerDay;
 
         Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
             if (groupName !== 'All Tasks') {
@@ -2302,20 +2309,39 @@ class KanbanBoard {
                 const barsContainer = document.createElement('div');
                 barsContainer.className = 'gantt-bars-container';
 
-                if (task.dueDate) {
+                if (task.startDate && task.dueDate) {
+                    const startDate = new Date(task.startDate);
+                    startDate.setHours(0, 0, 0, 0);
                     const dueDate = new Date(task.dueDate);
-                    const taskStart = startDate;
-                    const daysFromStart = Math.floor((dueDate - taskStart) / (1000 * 60 * 60 * 24));
-                    const leftPercent = Math.max(0, daysFromStart * pixelsPerDay);
-                    const widthPercent = Math.min(100 - leftPercent, 5);
+                    dueDate.setHours(0, 0, 0, 0);
+                    
+                    const daysFromStart = Math.floor((startDate - chartStart) / (1000 * 60 * 60 * 24));
+                    const duration = Math.floor((dueDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    const leftPercent = Math.max(0, daysFromStart * pxPerDay);
+                    const widthPercent = Math.max(60, duration * pxPerDay);
 
                     const bar = document.createElement('div');
                     bar.className = `gantt-bar ${task.priority || 'medium'}`;
-                    bar.style.left = leftPercent + '%';
-                    bar.style.width = widthPercent + '%';
-                    bar.style.minWidth = '60px';
-                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.title.substring(0, 15))}</span>`;
-                    bar.title = `${this.escapeHtml(task.title)}\nDue: ${task.dueDate}`;
+                    bar.style.left = leftPercent + 'px';
+                    bar.style.width = widthPercent + 'px';
+                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.text.substring(0, 15))}</span>`;
+                    bar.title = `${this.escapeHtml(task.text)}\nStart: ${task.startDate}\nDue: ${task.dueDate}`;
+                    bar.addEventListener('click', () => this.editTask(task.id));
+                    barsContainer.appendChild(bar);
+                } else if (task.dueDate) {
+                    const dueDate = new Date(task.dueDate);
+                    dueDate.setHours(0, 0, 0, 0);
+                    
+                    const daysFromStart = Math.floor((dueDate - chartStart) / (1000 * 60 * 60 * 24));
+                    const leftPercent = Math.max(0, daysFromStart * pxPerDay);
+
+                    const bar = document.createElement('div');
+                    bar.className = `gantt-bar ${task.priority || 'medium'}`;
+                    bar.style.left = leftPercent + 'px';
+                    bar.style.width = '60px';
+                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.text.substring(0, 15))}</span>`;
+                    bar.title = `${this.escapeHtml(task.text)}\nDue: ${task.dueDate}`;
                     bar.addEventListener('click', () => this.editTask(task.id));
                     barsContainer.appendChild(bar);
                 }
