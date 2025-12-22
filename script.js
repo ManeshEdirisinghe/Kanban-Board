@@ -139,7 +139,8 @@ class KanbanBoard {
         this.ganttViewBtn = document.getElementById('ganttViewBtn');
         this.closeGanttBtn = document.getElementById('closeGanttBtn');
         this.ganttTaskList = document.getElementById('ganttTaskList');
-        this.ganttTimelineRuler = document.getElementById('ganttTimelineRuler');
+        this.ganttWeekHeader = document.getElementById('ganttWeekHeader');
+        this.ganttDateHeader = document.getElementById('ganttDateHeader');
         this.ganttTimelineBody = document.getElementById('ganttTimelineBody');
         this.ganttGroupBy = document.getElementById('ganttGroupBy');
 
@@ -157,6 +158,7 @@ class KanbanBoard {
         this.prioritySelect = document.getElementById('prioritySelect');
         this.labelSelect = document.getElementById('labelSelect');
         this.dueDateInput = document.getElementById('dueDateInput');
+        this.startDateInput = document.getElementById('startDateInput');
         this.descriptionInput = document.getElementById('descriptionInput');
         this.assigneeSelect = document.getElementById('assigneeSelect');
         this.addTaskBtn = document.getElementById('addTaskBtn');
@@ -168,6 +170,7 @@ class KanbanBoard {
         this.editPrioritySelect = document.getElementById('editPrioritySelect');
         this.editLabelSelect = document.getElementById('editLabelSelect');
         this.editDueDateInput = document.getElementById('editDueDateInput');
+        this.editStartDateInput = document.getElementById('editStartDateInput');
         this.editAssigneeSelect = document.getElementById('editAssigneeSelect');
         this.saveEditBtn = document.getElementById('saveEditBtn');
         this.cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -839,6 +842,7 @@ class KanbanBoard {
             description: this.descriptionInput.value.trim(),
             priority: this.prioritySelect.value,
             label: this.labelSelect.value,
+            startDate: this.startDateInput.value || null,
             dueDate: this.dueDateInput.value || null,
             assignee: this.assigneeSelect.value || null,
             status: firstColumn.id,
@@ -858,6 +862,7 @@ class KanbanBoard {
         this.descriptionInput.value = '';
         this.labelSelect.value = '';
         this.dueDateInput.value = '';
+        this.startDateInput.value = '';
         this.assigneeSelect.value = '';
         this.taskInput.focus();
     }
@@ -1147,6 +1152,7 @@ class KanbanBoard {
         this.editDescriptionInput.value = task.description || '';
         this.editPrioritySelect.value = task.priority;
         this.editLabelSelect.value = task.label || '';
+        this.editStartDateInput.value = task.startDate || '';
         this.editDueDateInput.value = task.dueDate || '';
         this.editAssigneeSelect.value = task.assignee || '';
 
@@ -1178,6 +1184,7 @@ class KanbanBoard {
             task.description = this.editDescriptionInput.value.trim();
             task.priority = this.editPrioritySelect.value;
             task.label = this.editLabelSelect.value;
+            task.startDate = this.editStartDateInput.value || null;
             task.dueDate = this.editDueDateInput.value || null;
             task.assignee = this.editAssigneeSelect.value || null;
             task.subtasks = [...this.tempSubtasks];
@@ -2195,12 +2202,19 @@ class KanbanBoard {
             return;
         }
 
+        const tasksWithDates = board.tasks.filter(t => t.dueDate);
+        if (tasksWithDates.length === 0) {
+            this.ganttTaskList.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">No tasks with dates</div>';
+            this.ganttTimelineBody.innerHTML = '<div class="gantt-empty">No tasks with due dates</div>';
+            return;
+        }
+
         const groupBy = this.ganttGroupBy.value;
-        const groupedTasks = this.groupGanttTasks(board.tasks, groupBy);
+        const groupedTasks = this.groupGanttTasks(tasksWithDates, groupBy);
         
-        this.renderGanttTimeline(board);
-        this.renderGanttTaskList(groupedTasks, board);
-        this.renderGanttBars(groupedTasks, board);
+        this.renderGanttTimeline(tasksWithDates);
+        this.renderGanttTaskList(groupedTasks);
+        this.renderGanttBars(groupedTasks);
     }
 
     groupGanttTasks(tasks, groupBy) {
@@ -2233,27 +2247,99 @@ class KanbanBoard {
         return grouped;
     }
 
-    renderGanttTimeline(board) {
+    renderGanttTimeline(tasks) {
         const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 7);
+        today.setHours(0, 0, 0, 0);
 
-        const endDate = new Date(today);
-        endDate.setDate(endDate.getDate() + 90);
+        let minDate = new Date(today);
+        minDate.setDate(minDate.getDate() - 7);
+        let maxDate = new Date(today);
+        maxDate.setDate(maxDate.getDate() + 90);
 
-        let rulerHtml = '';
-        let current = new Date(startDate);
+        tasks.forEach(task => {
+            if (task.startDate) {
+                const startDate = new Date(task.startDate);
+                startDate.setHours(0, 0, 0, 0);
+                if (startDate < minDate) minDate = new Date(startDate);
+            }
+            if (task.dueDate) {
+                const dueDate = new Date(task.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (dueDate > maxDate) maxDate = new Date(dueDate);
+            }
+        });
 
-        while (current <= endDate) {
-            const monthLabel = current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-            rulerHtml += `<div class="gantt-timeline-month">${monthLabel}</div>`;
-            current.setDate(current.getDate() + 30);
-        }
+        this.ganttStartDate = new Date(minDate);
+        this.ganttEndDate = new Date(maxDate);
 
-        this.ganttTimelineRuler.innerHTML = rulerHtml;
+        this.renderGanttHeaders();
     }
 
-    renderGanttTaskList(groupedTasks, board) {
+    renderGanttHeaders() {
+        const currentDate = new Date(this.ganttStartDate);
+        let weekHeaderHtml = '';
+        let dateHeaderHtml = '';
+        let dayCounter = 0;
+
+        const cellWidth = 60;
+        const daysToShow = Math.ceil((this.ganttEndDate - this.ganttStartDate) / (1000 * 60 * 60 * 24));
+
+        while (currentDate <= this.ganttEndDate) {
+            const weekNumber = this.getWeekNumber(currentDate);
+            const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+            const dayNum = currentDate.getDate();
+            const monthYear = currentDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+            dateHeaderHtml += `<div class="gantt-date-cell" style="width: ${cellWidth}px;">
+                <div class="gantt-day-name">${dayName}</div>
+                <div class="gantt-day-num">${dayNum}</div>
+            </div>`;
+
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // Render weeks
+        const startWeek = this.getWeekNumber(this.ganttStartDate);
+        const endWeek = this.getWeekNumber(this.ganttEndDate);
+        for (let w = startWeek; w <= endWeek; w++) {
+            const weekStart = this.getDateOfWeek(this.ganttStartDate.getFullYear(), w, 1);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            const weekWidth = Math.ceil((weekEnd - weekStart) / (1000 * 60 * 60 * 24)) * cellWidth;
+            const monthStart = weekStart.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            const dayStart = weekStart.getDate();
+            const dayEnd = weekEnd.getDate();
+            
+            weekHeaderHtml += `<div class="gantt-week-cell" style="width: ${weekWidth}px;">
+                <span>W${w}</span>
+                <span class="gantt-week-dates">${monthStart} ${dayStart} - ${dayEnd}</span>
+            </div>`;
+        }
+
+        this.ganttWeekHeader.innerHTML = weekHeaderHtml;
+        this.ganttDateHeader.innerHTML = dateHeaderHtml;
+        this.ganttCellWidth = cellWidth;
+    }
+
+    getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    getDateOfWeek(year, week, day) {
+        const simple = new Date(year, 0, 1 + (week - 1) * 7);
+        const dow = simple.getDay();
+        const ISOweekStart = simple;
+        if (dow <= 4) ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+        else ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+        ISOweekStart.setDate(ISOweekStart.getDate() + day - 1);
+        return ISOweekStart;
+    }
+
+    renderGanttTaskList(groupedTasks) {
         this.ganttTaskList.innerHTML = '';
 
         Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
@@ -2267,32 +2353,32 @@ class KanbanBoard {
             tasks.forEach(task => {
                 const taskItem = document.createElement('div');
                 taskItem.className = 'gantt-task-item';
+                
+                let assigneeHtml = '';
+                if (task.assignee) {
+                    const member = this.getMember(task.assignee);
+                    if (member) {
+                        assigneeHtml = `<span class="gantt-task-assignee" style="background: ${member.color}" title="${member.name}">${member.initials}</span>`;
+                    }
+                }
+
                 taskItem.innerHTML = `
-                    <div class="gantt-task-priority ${task.priority || 'medium'}"></div>
-                    <span class="gantt-task-label" title="${this.escapeHtml(task.title)}">${this.escapeHtml(task.title.substring(0, 25))}</span>
+                    <span class="gantt-task-label" title="${this.escapeHtml(task.text)}">${this.escapeHtml(task.text.substring(0, 30))}</span>
+                    ${assigneeHtml}
                 `;
                 this.ganttTaskList.appendChild(taskItem);
             });
         });
     }
 
-    renderGanttBars(groupedTasks, board) {
+    renderGanttBars(groupedTasks) {
         this.ganttTimelineBody.innerHTML = '';
-        
-        const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 7);
-        const totalDays = 97;
-        const pixelsPerDay = 100 / 30;
-
-        const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
-        const todayPixels = todayOffset * pixelsPerDay;
 
         Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
             if (groupName !== 'All Tasks') {
                 const groupRow = document.createElement('div');
                 groupRow.className = 'gantt-row group-row';
-                groupRow.innerHTML = `<div class="gantt-bars-container"><span>${this.escapeHtml(groupName)}</span></div>`;
+                groupRow.innerHTML = `<span>${this.escapeHtml(groupName)}</span>`;
                 this.ganttTimelineBody.appendChild(groupRow);
             }
 
@@ -2301,30 +2387,44 @@ class KanbanBoard {
                 taskRow.className = 'gantt-row';
                 const barsContainer = document.createElement('div');
                 barsContainer.className = 'gantt-bars-container';
+                barsContainer.style.width = '100%';
+                barsContainer.style.position = 'relative';
+                barsContainer.style.display = 'flex';
+                barsContainer.style.alignItems = 'center';
+                barsContainer.style.minHeight = '45px';
 
-                if (task.dueDate) {
-                    const dueDate = new Date(task.dueDate);
-                    const taskStart = startDate;
-                    const daysFromStart = Math.floor((dueDate - taskStart) / (1000 * 60 * 60 * 24));
-                    const leftPercent = Math.max(0, daysFromStart * pixelsPerDay);
-                    const widthPercent = Math.min(100 - leftPercent, 5);
+                if (task.startDate && task.dueDate) {
+                    const startDate = new Date(task.startDate);
+                    startDate.setHours(0, 0, 0, 0);
+                    const endDate = new Date(task.dueDate);
+                    endDate.setHours(0, 0, 0, 0);
+
+                    const daysFromStart = Math.floor((startDate - this.ganttStartDate) / (1000 * 60 * 60 * 24));
+                    const duration = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
                     const bar = document.createElement('div');
                     bar.className = `gantt-bar ${task.priority || 'medium'}`;
-                    bar.style.left = leftPercent + '%';
-                    bar.style.width = widthPercent + '%';
-                    bar.style.minWidth = '60px';
-                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.title.substring(0, 15))}</span>`;
-                    bar.title = `${this.escapeHtml(task.title)}\nDue: ${task.dueDate}`;
+                    bar.style.marginLeft = (daysFromStart * this.ganttCellWidth) + 'px';
+                    bar.style.width = (duration * this.ganttCellWidth) + 'px';
+                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.text)}</span>`;
+                    bar.title = `${this.escapeHtml(task.text)}\nStart: ${task.startDate}\nDue: ${task.dueDate}`;
+                    bar.addEventListener('click', () => this.editTask(task.id));
+                    barsContainer.appendChild(bar);
+                } else if (task.dueDate) {
+                    const endDate = new Date(task.dueDate);
+                    endDate.setHours(0, 0, 0, 0);
+
+                    const daysFromStart = Math.floor((endDate - this.ganttStartDate) / (1000 * 60 * 60 * 24));
+
+                    const bar = document.createElement('div');
+                    bar.className = `gantt-bar ${task.priority || 'medium'}`;
+                    bar.style.marginLeft = (daysFromStart * this.ganttCellWidth) + 'px';
+                    bar.style.width = this.ganttCellWidth + 'px';
+                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.text)}</span>`;
+                    bar.title = `${this.escapeHtml(task.text)}\nDue: ${task.dueDate}`;
                     bar.addEventListener('click', () => this.editTask(task.id));
                     barsContainer.appendChild(bar);
                 }
-
-                // Add today marker
-                const todayMarker = document.createElement('div');
-                todayMarker.className = 'gantt-today-marker';
-                todayMarker.style.left = todayPixels + 'px';
-                barsContainer.appendChild(todayMarker);
 
                 taskRow.appendChild(barsContainer);
                 this.ganttTimelineBody.appendChild(taskRow);

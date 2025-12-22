@@ -221,6 +221,7 @@
                     <option value="documentation">Documentation</option>
                 </select>
                 <input type="date" id="dueDateInput" title="Due Date">
+                <input type="date" id="startDateInput" title="Start Date">
                 <select id="assigneeSelect" title="Assign to">
                     <option value="">Unassigned</option>
                 </select>
@@ -261,6 +262,7 @@
                     <option value="documentation">Documentation</option>
                 </select>
                 <input type="date" id="editDueDateInput" title="Due Date">
+                <input type="date" id="editStartDateInput" title="Start Date">
                 <select id="editAssigneeSelect" title="Assign to">
                     <option value="">Unassigned</option>
                 </select>
@@ -620,7 +622,8 @@
                 </div>
                 <div class="gantt-chart">
                     <div class="gantt-timeline-header">
-                        <div class="gantt-timeline-ruler" id="ganttTimelineRuler"></div>
+                        <div class="gantt-week-header" id="ganttWeekHeader"></div>
+                        <div class="gantt-date-header" id="ganttDateHeader"></div>
                     </div>
                     <div class="gantt-timeline-body" id="ganttTimelineBody"></div>
                 </div>
