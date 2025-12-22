@@ -134,6 +134,15 @@ class KanbanBoard {
         this.cancelEditColumnBtn = document.getElementById('cancelEditColumnBtn');
         this.currentEditColumnId = null;
 
+        // Gantt Chart Elements
+        this.ganttChartModal = document.getElementById('ganttChartModal');
+        this.ganttViewBtn = document.getElementById('ganttViewBtn');
+        this.closeGanttBtn = document.getElementById('closeGanttBtn');
+        this.ganttTaskList = document.getElementById('ganttTaskList');
+        this.ganttTimelineRuler = document.getElementById('ganttTimelineRuler');
+        this.ganttTimelineBody = document.getElementById('ganttTimelineBody');
+        this.ganttGroupBy = document.getElementById('ganttGroupBy');
+
         this.teamModal = document.getElementById('teamModal');
         this.teamList = document.getElementById('teamList');
         this.memberNameInput = document.getElementById('memberNameInput');
@@ -320,7 +329,7 @@ class KanbanBoard {
         this.filterAssignee.addEventListener('change', () => this.applyFilters());
         this.clearFiltersBtn.addEventListener('click', () => this.clearFilters());
 
-        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal, this.themeCustomizeModal, this.taskTemplatesModal, this.templateEditorModal].forEach(modal => {
+        [this.editModal, this.newBoardModal, this.addColumnModal, this.editColumnModal, this.teamModal, this.calendarModal, this.notificationModal, this.emailModal, this.themeCustomizeModal, this.taskTemplatesModal, this.templateEditorModal, this.ganttChartModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
@@ -335,6 +344,11 @@ class KanbanBoard {
         this.cancelTemplateBtn.addEventListener('click', () => this.closeTemplateEditor());
         this.closeTemplatesBtn.addEventListener('click', () => this.closeTemplatesModal());
         this.templateSearchInput.addEventListener('input', () => this.filterTemplates());
+
+        // Gantt Chart Events
+        this.ganttViewBtn.addEventListener('click', () => this.openGanttChart());
+        this.closeGanttBtn.addEventListener('click', () => this.closeGanttChart());
+        this.ganttGroupBy.addEventListener('change', () => this.renderGanttChart());
 
         this.calendarViewBtn.addEventListener('click', () => this.openCalendarModal());
         this.closeCalendarBtn.addEventListener('click', () => this.closeCalendarModal());
@@ -2161,6 +2175,161 @@ class KanbanBoard {
         this.closeTemplatesModal();
         
         alert(`Task created from template "${this.escapeHtml(template.name)}"`);
+    }
+
+    // ==================== GANTT CHART VIEW ====================
+    openGanttChart() {
+        this.renderGanttChart();
+        this.ganttChartModal.classList.add('active');
+    }
+
+    closeGanttChart() {
+        this.ganttChartModal.classList.remove('active');
+    }
+
+    renderGanttChart() {
+        const board = this.getCurrentBoard();
+        if (!board || board.tasks.length === 0) {
+            this.ganttTaskList.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">No tasks to display</div>';
+            this.ganttTimelineBody.innerHTML = '<div class="gantt-empty">No tasks to display in Gantt chart</div>';
+            return;
+        }
+
+        const groupBy = this.ganttGroupBy.value;
+        const groupedTasks = this.groupGanttTasks(board.tasks, groupBy);
+        
+        this.renderGanttTimeline(board);
+        this.renderGanttTaskList(groupedTasks, board);
+        this.renderGanttBars(groupedTasks, board);
+    }
+
+    groupGanttTasks(tasks, groupBy) {
+        if (groupBy === 'none') {
+            return { 'All Tasks': tasks };
+        }
+
+        const grouped = {};
+
+        if (groupBy === 'status') {
+            tasks.forEach(task => {
+                const status = task.status || 'Unassigned';
+                if (!grouped[status]) grouped[status] = [];
+                grouped[status].push(task);
+            });
+        } else if (groupBy === 'assignee') {
+            tasks.forEach(task => {
+                const assignee = task.assignee ? this.getMember(task.assignee)?.name : 'Unassigned';
+                if (!grouped[assignee]) grouped[assignee] = [];
+                grouped[assignee].push(task);
+            });
+        } else if (groupBy === 'priority') {
+            tasks.forEach(task => {
+                const priority = (task.priority || 'medium').charAt(0).toUpperCase() + (task.priority || 'medium').slice(1);
+                if (!grouped[priority]) grouped[priority] = [];
+                grouped[priority].push(task);
+            });
+        }
+
+        return grouped;
+    }
+
+    renderGanttTimeline(board) {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 7);
+
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + 90);
+
+        let rulerHtml = '';
+        let current = new Date(startDate);
+
+        while (current <= endDate) {
+            const monthLabel = current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            rulerHtml += `<div class="gantt-timeline-month">${monthLabel}</div>`;
+            current.setDate(current.getDate() + 30);
+        }
+
+        this.ganttTimelineRuler.innerHTML = rulerHtml;
+    }
+
+    renderGanttTaskList(groupedTasks, board) {
+        this.ganttTaskList.innerHTML = '';
+
+        Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
+            if (groupName !== 'All Tasks') {
+                const groupHeader = document.createElement('div');
+                groupHeader.className = 'gantt-task-item group-header';
+                groupHeader.innerHTML = `<span class="gantt-task-label">${this.escapeHtml(groupName)}</span>`;
+                this.ganttTaskList.appendChild(groupHeader);
+            }
+
+            tasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'gantt-task-item';
+                taskItem.innerHTML = `
+                    <div class="gantt-task-priority ${task.priority || 'medium'}"></div>
+                    <span class="gantt-task-label" title="${this.escapeHtml(task.title)}">${this.escapeHtml(task.title.substring(0, 25))}</span>
+                `;
+                this.ganttTaskList.appendChild(taskItem);
+            });
+        });
+    }
+
+    renderGanttBars(groupedTasks, board) {
+        this.ganttTimelineBody.innerHTML = '';
+        
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 7);
+        const totalDays = 97;
+        const pixelsPerDay = 100 / 30;
+
+        const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+        const todayPixels = todayOffset * pixelsPerDay;
+
+        Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
+            if (groupName !== 'All Tasks') {
+                const groupRow = document.createElement('div');
+                groupRow.className = 'gantt-row group-row';
+                groupRow.innerHTML = `<div class="gantt-bars-container"><span>${this.escapeHtml(groupName)}</span></div>`;
+                this.ganttTimelineBody.appendChild(groupRow);
+            }
+
+            tasks.forEach(task => {
+                const taskRow = document.createElement('div');
+                taskRow.className = 'gantt-row';
+                const barsContainer = document.createElement('div');
+                barsContainer.className = 'gantt-bars-container';
+
+                if (task.dueDate) {
+                    const dueDate = new Date(task.dueDate);
+                    const taskStart = startDate;
+                    const daysFromStart = Math.floor((dueDate - taskStart) / (1000 * 60 * 60 * 24));
+                    const leftPercent = Math.max(0, daysFromStart * pixelsPerDay);
+                    const widthPercent = Math.min(100 - leftPercent, 5);
+
+                    const bar = document.createElement('div');
+                    bar.className = `gantt-bar ${task.priority || 'medium'}`;
+                    bar.style.left = leftPercent + '%';
+                    bar.style.width = widthPercent + '%';
+                    bar.style.minWidth = '60px';
+                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.title.substring(0, 15))}</span>`;
+                    bar.title = `${this.escapeHtml(task.title)}\nDue: ${task.dueDate}`;
+                    bar.addEventListener('click', () => this.editTask(task.id));
+                    barsContainer.appendChild(bar);
+                }
+
+                // Add today marker
+                const todayMarker = document.createElement('div');
+                todayMarker.className = 'gantt-today-marker';
+                todayMarker.style.left = todayPixels + 'px';
+                barsContainer.appendChild(todayMarker);
+
+                taskRow.appendChild(barsContainer);
+                this.ganttTimelineBody.appendChild(taskRow);
+            });
+        });
     }
 }
 

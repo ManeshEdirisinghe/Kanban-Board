@@ -185,6 +185,9 @@
                 <button class="view-toggle-btn" id="calendarViewBtn" title="Calendar View">
                     <i class="fas fa-calendar-alt"></i>
                 </button>
+                <button class="view-toggle-btn" id="ganttViewBtn" title="Gantt Chart View">
+                    <i class="fas fa-chart-gantt"></i>
+                </button>
                 <button class="notification-btn" id="notificationBtn" title="Notification Settings">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
@@ -592,6 +595,35 @@
             <div class="modal-buttons">
                 <button id="saveTemplateBtn">Save Template</button>
                 <button id="cancelTemplateBtn" class="secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gantt Chart Modal -->
+    <div class="modal" id="ganttChartModal">
+        <div class="modal-content gantt-modal">
+            <div class="gantt-header">
+                <h3><i class="fas fa-chart-gantt"></i> Gantt Chart View</h3>
+                <div class="gantt-controls">
+                    <select id="ganttGroupBy">
+                        <option value="none">No Grouping</option>
+                        <option value="status">Group by Status</option>
+                        <option value="assignee">Group by Assignee</option>
+                        <option value="priority">Group by Priority</option>
+                    </select>
+                    <button id="closeGanttBtn" class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <div class="gantt-container">
+                <div class="gantt-sidebar">
+                    <div class="gantt-task-list" id="ganttTaskList"></div>
+                </div>
+                <div class="gantt-chart">
+                    <div class="gantt-timeline-header">
+                        <div class="gantt-timeline-ruler" id="ganttTimelineRuler"></div>
+                    </div>
+                    <div class="gantt-timeline-body" id="ganttTimelineBody"></div>
+                </div>
             </div>
         </div>
     </div>
