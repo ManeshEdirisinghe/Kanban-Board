@@ -609,20 +609,31 @@
                 <div class="gantt-controls">
                     <select id="ganttGroupBy">
                         <option value="none">No Grouping</option>
-                        <option value="status">Group by Status</option>
+                        <option value="status" selected>Group by Status</option>
                         <option value="assignee">Group by Assignee</option>
                         <option value="priority">Group by Priority</option>
                     </select>
+                    <div class="gantt-zoom-controls">
+                        <button id="ganttZoomOut" class="gantt-zoom-btn" title="Zoom Out"><i class="fas fa-minus"></i></button>
+                        <span id="ganttZoomLevel">100%</span>
+                        <button id="ganttZoomIn" class="gantt-zoom-btn" title="Zoom In"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <button id="ganttTodayBtn" class="gantt-today-btn" title="Go to Today"><i class="fas fa-crosshairs"></i> Today</button>
                     <button id="closeGanttBtn" class="close-btn"><i class="fas fa-times"></i></button>
                 </div>
             </div>
-            <div class="gantt-container">
+            <div class="gantt-main-container">
                 <div class="gantt-sidebar">
+                    <div class="gantt-sidebar-header">
+                        <span>Name</span>
+                        <button id="ganttExpandAll" class="gantt-expand-btn" title="Expand/Collapse All"><i class="fas fa-expand-alt"></i></button>
+                    </div>
                     <div class="gantt-task-list" id="ganttTaskList"></div>
                 </div>
-                <div class="gantt-chart">
-                    <div class="gantt-timeline-header">
-                        <div class="gantt-timeline-ruler" id="ganttTimelineRuler"></div>
+                <div class="gantt-chart-wrapper" id="ganttChartWrapper">
+                    <div class="gantt-timeline-header" id="ganttTimelineHeader">
+                        <div class="gantt-timeline-weeks" id="ganttTimelineWeeks"></div>
+                        <div class="gantt-timeline-days" id="ganttTimelineDays"></div>
                     </div>
                     <div class="gantt-timeline-body" id="ganttTimelineBody"></div>
                 </div>

@@ -139,9 +139,21 @@ class KanbanBoard {
         this.ganttViewBtn = document.getElementById('ganttViewBtn');
         this.closeGanttBtn = document.getElementById('closeGanttBtn');
         this.ganttTaskList = document.getElementById('ganttTaskList');
-        this.ganttTimelineRuler = document.getElementById('ganttTimelineRuler');
+        this.ganttTimelineWeeks = document.getElementById('ganttTimelineWeeks');
+        this.ganttTimelineDays = document.getElementById('ganttTimelineDays');
         this.ganttTimelineBody = document.getElementById('ganttTimelineBody');
         this.ganttGroupBy = document.getElementById('ganttGroupBy');
+        this.ganttChartWrapper = document.getElementById('ganttChartWrapper');
+        this.ganttTimelineHeader = document.getElementById('ganttTimelineHeader');
+        this.ganttZoomIn = document.getElementById('ganttZoomIn');
+        this.ganttZoomOut = document.getElementById('ganttZoomOut');
+        this.ganttZoomLevel = document.getElementById('ganttZoomLevel');
+        this.ganttTodayBtn = document.getElementById('ganttTodayBtn');
+        this.ganttExpandAll = document.getElementById('ganttExpandAll');
+        
+        // Gantt state
+        this.ganttPxPerDay = 40;
+        this.ganttCollapsedGroups = new Set();
 
         this.teamModal = document.getElementById('teamModal');
         this.teamList = document.getElementById('teamList');
@@ -351,6 +363,16 @@ class KanbanBoard {
         this.ganttViewBtn.addEventListener('click', () => this.openGanttChart());
         this.closeGanttBtn.addEventListener('click', () => this.closeGanttChart());
         this.ganttGroupBy.addEventListener('change', () => this.renderGanttChart());
+        this.ganttZoomIn.addEventListener('click', () => this.ganttZoom(1));
+        this.ganttZoomOut.addEventListener('click', () => this.ganttZoom(-1));
+        this.ganttTodayBtn.addEventListener('click', () => this.ganttScrollToToday());
+        this.ganttExpandAll.addEventListener('click', () => this.ganttToggleAllGroups());
+        
+        // Sync scroll between sidebar and chart
+        this.ganttTimelineBody.addEventListener('scroll', () => {
+            this.ganttTaskList.scrollTop = this.ganttTimelineBody.scrollTop;
+            this.ganttTimelineHeader.scrollLeft = this.ganttTimelineBody.scrollLeft;
+        });
 
         this.calendarViewBtn.addEventListener('click', () => this.openCalendarModal());
         this.closeCalendarBtn.addEventListener('click', () => this.closeCalendarModal());
@@ -2187,24 +2209,126 @@ class KanbanBoard {
     openGanttChart() {
         this.renderGanttChart();
         this.ganttChartModal.classList.add('active');
+        setTimeout(() => this.ganttScrollToToday(), 100);
     }
 
     closeGanttChart() {
         this.ganttChartModal.classList.remove('active');
     }
 
+    ganttZoom(direction) {
+        const zoomLevels = [20, 30, 40, 50, 60, 80];
+        const currentIndex = zoomLevels.indexOf(this.ganttPxPerDay);
+        const newIndex = Math.max(0, Math.min(zoomLevels.length - 1, currentIndex + direction));
+        this.ganttPxPerDay = zoomLevels[newIndex];
+        this.ganttZoomLevel.textContent = Math.round((this.ganttPxPerDay / 40) * 100) + '%';
+        this.renderGanttChart();
+    }
+
+    ganttScrollToToday() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const chartStart = this.getGanttChartStart();
+        const daysFromStart = Math.floor((today - chartStart) / (1000 * 60 * 60 * 24));
+        const scrollTo = Math.max(0, (daysFromStart * this.ganttPxPerDay) - (this.ganttChartWrapper.offsetWidth / 2));
+        this.ganttTimelineBody.scrollLeft = scrollTo;
+        this.ganttTimelineHeader.scrollLeft = scrollTo;
+    }
+
+    ganttToggleAllGroups() {
+        const board = this.getCurrentBoard();
+        if (!board) return;
+        
+        const groupBy = this.ganttGroupBy.value;
+        const groupedTasks = this.groupGanttTasks(board.tasks, groupBy);
+        const groupNames = Object.keys(groupedTasks);
+        
+        if (this.ganttCollapsedGroups.size === groupNames.length) {
+            this.ganttCollapsedGroups.clear();
+        } else {
+            groupNames.forEach(name => this.ganttCollapsedGroups.add(name));
+        }
+        this.renderGanttChart();
+    }
+
+    toggleGanttGroup(groupName) {
+        if (this.ganttCollapsedGroups.has(groupName)) {
+            this.ganttCollapsedGroups.delete(groupName);
+        } else {
+            this.ganttCollapsedGroups.add(groupName);
+        }
+        this.renderGanttChart();
+    }
+
+    getGanttChartStart() {
+        const board = this.getCurrentBoard();
+        let minDate = new Date();
+        minDate.setDate(minDate.getDate() - 7);
+        
+        if (board && board.tasks.length > 0) {
+            board.tasks.forEach(task => {
+                if (task.startDate) {
+                    const start = new Date(task.startDate);
+                    if (start < minDate) minDate = new Date(start);
+                }
+                if (task.dueDate) {
+                    const due = new Date(task.dueDate);
+                    if (due < minDate) minDate = new Date(due);
+                }
+            });
+        }
+        
+        // Round to start of week (Saturday for better alignment)
+        const dayOfWeek = minDate.getDay();
+        minDate.setDate(minDate.getDate() - dayOfWeek - 1);
+        minDate.setHours(0, 0, 0, 0);
+        return minDate;
+    }
+
+    getGanttChartEnd() {
+        const board = this.getCurrentBoard();
+        let maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 30);
+        
+        if (board && board.tasks.length > 0) {
+            board.tasks.forEach(task => {
+                if (task.dueDate) {
+                    const due = new Date(task.dueDate);
+                    if (due > maxDate) maxDate = new Date(due);
+                }
+                if (task.startDate) {
+                    const start = new Date(task.startDate);
+                    if (start > maxDate) maxDate = new Date(start);
+                }
+            });
+        }
+        
+        maxDate.setDate(maxDate.getDate() + 14);
+        return maxDate;
+    }
+
+    getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
     renderGanttChart() {
         const board = this.getCurrentBoard();
         if (!board || board.tasks.length === 0) {
-            this.ganttTaskList.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">No tasks to display</div>';
-            this.ganttTimelineBody.innerHTML = '<div class="gantt-empty">No tasks to display in Gantt chart</div>';
+            this.ganttTaskList.innerHTML = '<div class="gantt-empty-message">No tasks to display</div>';
+            this.ganttTimelineWeeks.innerHTML = '';
+            this.ganttTimelineDays.innerHTML = '';
+            this.ganttTimelineBody.innerHTML = '<div class="gantt-empty">Add tasks with dates to see them in the Gantt chart</div>';
             return;
         }
 
         const groupBy = this.ganttGroupBy.value;
         const groupedTasks = this.groupGanttTasks(board.tasks, groupBy);
         
-        this.renderGanttTimeline(board);
+        this.renderGanttTimelineHeader();
         this.renderGanttTaskList(groupedTasks, board);
         this.renderGanttBars(groupedTasks, board);
     }
@@ -2215,12 +2339,23 @@ class KanbanBoard {
         }
 
         const grouped = {};
+        const board = this.getCurrentBoard();
 
         if (groupBy === 'status') {
+            // Get column names for proper ordering
+            const columns = board.columns || this.defaultColumns;
+            columns.forEach(col => {
+                grouped[col.name] = [];
+            });
             tasks.forEach(task => {
-                const status = task.status || 'Unassigned';
-                if (!grouped[status]) grouped[status] = [];
-                grouped[status].push(task);
+                const column = columns.find(c => c.id === task.status);
+                const statusName = column ? column.name : 'Unknown';
+                if (!grouped[statusName]) grouped[statusName] = [];
+                grouped[statusName].push(task);
+            });
+            // Remove empty groups
+            Object.keys(grouped).forEach(key => {
+                if (grouped[key].length === 0) delete grouped[key];
             });
         } else if (groupBy === 'assignee') {
             tasks.forEach(task => {
@@ -2229,133 +2364,266 @@ class KanbanBoard {
                 grouped[assignee].push(task);
             });
         } else if (groupBy === 'priority') {
+            ['High', 'Medium', 'Low'].forEach(p => grouped[p] = []);
             tasks.forEach(task => {
                 const priority = (task.priority || 'medium').charAt(0).toUpperCase() + (task.priority || 'medium').slice(1);
                 if (!grouped[priority]) grouped[priority] = [];
                 grouped[priority].push(task);
+            });
+            Object.keys(grouped).forEach(key => {
+                if (grouped[key].length === 0) delete grouped[key];
             });
         }
 
         return grouped;
     }
 
-    renderGanttTimeline(board) {
-        const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 7);
+    renderGanttTimelineHeader() {
+        const chartStart = this.getGanttChartStart();
+        const chartEnd = this.getGanttChartEnd();
+        const totalDays = Math.ceil((chartEnd - chartStart) / (1000 * 60 * 60 * 24));
+        const totalWidth = totalDays * this.ganttPxPerDay;
 
-        const endDate = new Date(today);
-        endDate.setDate(endDate.getDate() + 90);
-
-        let rulerHtml = '';
-        let current = new Date(startDate);
-
-        while (current <= endDate) {
-            const monthLabel = current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-            rulerHtml += `<div class="gantt-timeline-month">${monthLabel}</div>`;
-            current.setDate(current.getDate() + 30);
+        // Render weeks row
+        let weeksHtml = '';
+        let daysHtml = '';
+        let current = new Date(chartStart);
+        
+        while (current <= chartEnd) {
+            // Find the end of this week
+            const weekStart = new Date(current);
+            const weekNum = this.getWeekNumber(weekStart);
+            
+            // Get Saturday (end of week)
+            let weekEnd = new Date(weekStart);
+            const daysToSaturday = (6 - weekStart.getDay() + 7) % 7;
+            weekEnd.setDate(weekEnd.getDate() + (daysToSaturday === 0 ? 7 : daysToSaturday));
+            if (weekEnd > chartEnd) weekEnd = new Date(chartEnd);
+            
+            const daysInWeek = Math.ceil((weekEnd - weekStart) / (1000 * 60 * 60 * 24)) + 1;
+            const weekWidth = daysInWeek * this.ganttPxPerDay;
+            
+            const monthDay = weekStart.getDate();
+            const month = weekStart.toLocaleDateString('en-US', { month: 'short' });
+            const endDay = weekEnd.getDate();
+            
+            weeksHtml += `<div class="gantt-week-cell" style="width: ${weekWidth}px;">
+                <span class="gantt-week-number">W${weekNum}</span>
+                <span class="gantt-week-range">${month} ${monthDay} - ${endDay}</span>
+            </div>`;
+            
+            current = new Date(weekEnd);
+            current.setDate(current.getDate() + 1);
         }
 
-        this.ganttTimelineRuler.innerHTML = rulerHtml;
+        // Render days row
+        current = new Date(chartStart);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        while (current <= chartEnd) {
+            const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+            const dayName = dayNames[current.getDay()];
+            const dayNum = current.getDate();
+            const isToday = current.getTime() === today.getTime();
+            const isWeekend = current.getDay() === 0 || current.getDay() === 6;
+            
+            daysHtml += `<div class="gantt-day-cell ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}" style="width: ${this.ganttPxPerDay}px;">
+                <span class="gantt-day-name">${dayName}</span>
+                <span class="gantt-day-num">${dayNum}</span>
+            </div>`;
+            
+            current.setDate(current.getDate() + 1);
+        }
+
+        this.ganttTimelineWeeks.innerHTML = weeksHtml;
+        this.ganttTimelineWeeks.style.width = totalWidth + 'px';
+        this.ganttTimelineDays.innerHTML = daysHtml;
+        this.ganttTimelineDays.style.width = totalWidth + 'px';
     }
 
     renderGanttTaskList(groupedTasks, board) {
         this.ganttTaskList.innerHTML = '';
 
         Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
-            if (groupName !== 'All Tasks') {
-                const groupHeader = document.createElement('div');
-                groupHeader.className = 'gantt-task-item group-header';
-                groupHeader.innerHTML = `<span class="gantt-task-label">${this.escapeHtml(groupName)}</span>`;
-                this.ganttTaskList.appendChild(groupHeader);
-            }
-
-            tasks.forEach(task => {
-                const taskItem = document.createElement('div');
-                taskItem.className = 'gantt-task-item';
-                taskItem.innerHTML = `
-                    <div class="gantt-task-priority ${task.priority || 'medium'}"></div>
-                    <span class="gantt-task-label" title="${this.escapeHtml(task.text)}">${this.escapeHtml(task.text.substring(0, 25))}</span>
-                `;
-                this.ganttTaskList.appendChild(taskItem);
+            const isCollapsed = this.ganttCollapsedGroups.has(groupName);
+            
+            // Group header with progress bar
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'gantt-group-header';
+            groupHeader.innerHTML = `
+                <button class="gantt-collapse-btn">
+                    <i class="fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'}"></i>
+                </button>
+                <i class="fas fa-list-ul gantt-group-icon"></i>
+                <span class="gantt-group-name">${this.escapeHtml(groupName)}</span>
+                <span class="gantt-group-count">${tasks.length}</span>
+            `;
+            groupHeader.querySelector('.gantt-collapse-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleGanttGroup(groupName);
             });
+            this.ganttTaskList.appendChild(groupHeader);
+
+            if (!isCollapsed) {
+                tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'gantt-task-item';
+                    taskItem.dataset.taskId = task.id;
+                    
+                    const assignees = task.assignee ? [this.getMember(task.assignee)].filter(Boolean) : [];
+                    const assigneeBadges = assignees.map(m => 
+                        `<span class="gantt-assignee-badge" style="background: ${m.color}" title="${this.escapeHtml(m.name)}">${this.escapeHtml(m.initials)}</span>`
+                    ).join('');
+                    
+                    taskItem.innerHTML = `
+                        <div class="gantt-task-priority ${task.priority || 'medium'}"></div>
+                        <span class="gantt-task-label" title="${this.escapeHtml(task.text)}">${this.escapeHtml(task.text)}</span>
+                        <div class="gantt-task-assignees">${assigneeBadges}</div>
+                    `;
+                    taskItem.addEventListener('click', () => this.editTask(task.id));
+                    this.ganttTaskList.appendChild(taskItem);
+                });
+            }
         });
     }
 
     renderGanttBars(groupedTasks, board) {
-        this.ganttTimelineBody.innerHTML = '';
+        const chartStart = this.getGanttChartStart();
+        const chartEnd = this.getGanttChartEnd();
+        const totalDays = Math.ceil((chartEnd - chartStart) / (1000 * 60 * 60 * 24));
+        const totalWidth = totalDays * this.ganttPxPerDay;
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const chartStart = new Date(today);
-        chartStart.setDate(chartStart.getDate() - 7);
-        
-        const pxPerDay = 3.3;
-
         const todayOffset = Math.floor((today - chartStart) / (1000 * 60 * 60 * 24));
-        const todayPixels = todayOffset * pxPerDay;
 
+        this.ganttTimelineBody.innerHTML = '';
+        this.ganttTimelineBody.style.width = totalWidth + 'px';
+
+        // Add day columns background
+        const dayColumnsContainer = document.createElement('div');
+        dayColumnsContainer.className = 'gantt-day-columns';
+        dayColumnsContainer.style.width = totalWidth + 'px';
+        
+        let current = new Date(chartStart);
+        let dayIndex = 0;
+        while (current <= chartEnd) {
+            const isWeekend = current.getDay() === 0 || current.getDay() === 6;
+            const isToday = current.getTime() === today.getTime();
+            const dayCol = document.createElement('div');
+            dayCol.className = `gantt-day-column ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}`;
+            dayCol.style.left = (dayIndex * this.ganttPxPerDay) + 'px';
+            dayCol.style.width = this.ganttPxPerDay + 'px';
+            dayColumnsContainer.appendChild(dayCol);
+            current.setDate(current.getDate() + 1);
+            dayIndex++;
+        }
+        this.ganttTimelineBody.appendChild(dayColumnsContainer);
+
+        // Render task rows
         Object.entries(groupedTasks).forEach(([groupName, tasks]) => {
-            if (groupName !== 'All Tasks') {
-                const groupRow = document.createElement('div');
-                groupRow.className = 'gantt-row group-row';
-                groupRow.innerHTML = `<div class="gantt-bars-container"><span>${this.escapeHtml(groupName)}</span></div>`;
-                this.ganttTimelineBody.appendChild(groupRow);
-            }
-
+            const isCollapsed = this.ganttCollapsedGroups.has(groupName);
+            
+            // Group row with combined bar
+            const groupRow = document.createElement('div');
+            groupRow.className = 'gantt-row group-row';
+            
+            // Calculate group date range
+            let groupStart = null, groupEnd = null;
             tasks.forEach(task => {
-                const taskRow = document.createElement('div');
-                taskRow.className = 'gantt-row';
-                const barsContainer = document.createElement('div');
-                barsContainer.className = 'gantt-bars-container';
-
-                if (task.startDate && task.dueDate) {
-                    const startDate = new Date(task.startDate);
-                    startDate.setHours(0, 0, 0, 0);
-                    const dueDate = new Date(task.dueDate);
-                    dueDate.setHours(0, 0, 0, 0);
-                    
-                    const daysFromStart = Math.floor((startDate - chartStart) / (1000 * 60 * 60 * 24));
-                    const duration = Math.floor((dueDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-                    
-                    const leftPercent = Math.max(0, daysFromStart * pxPerDay);
-                    const widthPercent = Math.max(60, duration * pxPerDay);
-
-                    const bar = document.createElement('div');
-                    bar.className = `gantt-bar ${task.priority || 'medium'}`;
-                    bar.style.left = leftPercent + 'px';
-                    bar.style.width = widthPercent + 'px';
-                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.text.substring(0, 15))}</span>`;
-                    bar.title = `${this.escapeHtml(task.text)}\nStart: ${task.startDate}\nDue: ${task.dueDate}`;
-                    bar.addEventListener('click', () => this.editTask(task.id));
-                    barsContainer.appendChild(bar);
-                } else if (task.dueDate) {
-                    const dueDate = new Date(task.dueDate);
-                    dueDate.setHours(0, 0, 0, 0);
-                    
-                    const daysFromStart = Math.floor((dueDate - chartStart) / (1000 * 60 * 60 * 24));
-                    const leftPercent = Math.max(0, daysFromStart * pxPerDay);
-
-                    const bar = document.createElement('div');
-                    bar.className = `gantt-bar ${task.priority || 'medium'}`;
-                    bar.style.left = leftPercent + 'px';
-                    bar.style.width = '60px';
-                    bar.innerHTML = `<span class="gantt-bar-label">${this.escapeHtml(task.text.substring(0, 15))}</span>`;
-                    bar.title = `${this.escapeHtml(task.text)}\nDue: ${task.dueDate}`;
-                    bar.addEventListener('click', () => this.editTask(task.id));
-                    barsContainer.appendChild(bar);
+                if (task.startDate) {
+                    const s = new Date(task.startDate);
+                    if (!groupStart || s < groupStart) groupStart = new Date(s);
                 }
-
-                // Add today marker
-                const todayMarker = document.createElement('div');
-                todayMarker.className = 'gantt-today-marker';
-                todayMarker.style.left = todayPixels + 'px';
-                barsContainer.appendChild(todayMarker);
-
-                taskRow.appendChild(barsContainer);
-                this.ganttTimelineBody.appendChild(taskRow);
+                if (task.dueDate) {
+                    const e = new Date(task.dueDate);
+                    if (!groupEnd || e > groupEnd) groupEnd = new Date(e);
+                }
             });
+            
+            if (groupStart && groupEnd) {
+                groupStart.setHours(0, 0, 0, 0);
+                groupEnd.setHours(0, 0, 0, 0);
+                const startOffset = Math.floor((groupStart - chartStart) / (1000 * 60 * 60 * 24));
+                const duration = Math.floor((groupEnd - groupStart) / (1000 * 60 * 60 * 24)) + 1;
+                
+                const groupBar = document.createElement('div');
+                groupBar.className = 'gantt-group-bar';
+                groupBar.style.left = (startOffset * this.ganttPxPerDay) + 'px';
+                groupBar.style.width = (duration * this.ganttPxPerDay) + 'px';
+                groupRow.appendChild(groupBar);
+            }
+            
+            this.ganttTimelineBody.appendChild(groupRow);
+
+            if (!isCollapsed) {
+                tasks.forEach(task => {
+                    const taskRow = document.createElement('div');
+                    taskRow.className = 'gantt-row';
+                    taskRow.dataset.taskId = task.id;
+
+                    if (task.startDate && task.dueDate) {
+                        const startDate = new Date(task.startDate);
+                        startDate.setHours(0, 0, 0, 0);
+                        const dueDate = new Date(task.dueDate);
+                        dueDate.setHours(0, 0, 0, 0);
+                        
+                        const daysFromStart = Math.floor((startDate - chartStart) / (1000 * 60 * 60 * 24));
+                        const duration = Math.floor((dueDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                        
+                        const leftPx = daysFromStart * this.ganttPxPerDay;
+                        const widthPx = Math.max(this.ganttPxPerDay, duration * this.ganttPxPerDay);
+
+                        const bar = this.createGanttBar(task, leftPx, widthPx);
+                        taskRow.appendChild(bar);
+                    } else if (task.dueDate) {
+                        const dueDate = new Date(task.dueDate);
+                        dueDate.setHours(0, 0, 0, 0);
+                        
+                        const daysFromStart = Math.floor((dueDate - chartStart) / (1000 * 60 * 60 * 24));
+                        const leftPx = daysFromStart * this.ganttPxPerDay;
+
+                        const bar = this.createGanttBar(task, leftPx, this.ganttPxPerDay * 2);
+                        taskRow.appendChild(bar);
+                    }
+
+                    this.ganttTimelineBody.appendChild(taskRow);
+                });
+            }
         });
+
+        // Add today line
+        const todayLine = document.createElement('div');
+        todayLine.className = 'gantt-today-line';
+        todayLine.style.left = (todayOffset * this.ganttPxPerDay) + 'px';
+        this.ganttTimelineBody.appendChild(todayLine);
+    }
+
+    createGanttBar(task, left, width) {
+        const bar = document.createElement('div');
+        bar.className = `gantt-bar ${task.priority || 'medium'}`;
+        if (task.status === 'done') bar.classList.add('completed');
+        bar.style.left = left + 'px';
+        bar.style.width = width + 'px';
+        
+        // Get assignee badges
+        const assignees = task.assignee ? [this.getMember(task.assignee)].filter(Boolean) : [];
+        const assigneeBadges = assignees.map(m => 
+            `<span class="gantt-bar-assignee" style="background: ${m.color}">${this.escapeHtml(m.initials)}</span>`
+        ).join('');
+        
+        bar.innerHTML = `
+            ${assigneeBadges}
+            <span class="gantt-bar-label">${this.escapeHtml(task.text)}</span>
+        `;
+        bar.title = `${this.escapeHtml(task.text)}${task.startDate ? '\nStart: ' + task.startDate : ''}${task.dueDate ? '\nDue: ' + task.dueDate : ''}`;
+        bar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.editTask(task.id);
+        });
+        
+        return bar;
     }
 }
 
