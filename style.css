@@ -3761,6 +3761,37 @@ body {
     transform: rotate(180deg);
 }
 
+/* Mobile Close Button */
+.nav-close-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-normal);
+}
+
+.nav-close-btn:hover {
+    border-color: var(--priority-high);
+    color: var(--priority-high);
+    background: rgba(248, 81, 73, 0.1);
+}
+
+@media (max-width: 1024px) {
+    .nav-toggle {
+        display: none;
+    }
+
+    .nav-close-btn {
+        display: flex;
+    }
+}
+
 .nav-content {
     flex: 1;
     overflow-y: auto;
@@ -4053,11 +4084,11 @@ body {
 
 @media (max-width: 768px) {
     .nav-sidebar {
-        width: 260px;
+        width: 280px;
     }
 
     .nav-sidebar.collapsed {
-        width: 260px;
+        width: 280px;
     }
 }
 
@@ -4069,5 +4100,640 @@ body {
         top: 0;
         height: 100vh;
         z-index: 450;
+    }
+}
+
+/* ============================================
+   COMPREHENSIVE MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+/* Tablet Breakpoint - 1024px */
+@media (max-width: 1024px) {
+    .mobile-menu-btn {
+        display: flex;
+    }
+
+    .nav-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 450;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .nav-sidebar:not(.hidden) {
+        transform: translateX(0);
+    }
+
+    .nav-sidebar.hidden {
+        transform: translateX(-100%);
+    }
+
+    .nav-backdrop.visible {
+        display: block;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    .header-right {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .search-filter-section {
+        gap: 8px;
+    }
+
+    .search-box {
+        min-width: 150px;
+        max-width: 200px;
+    }
+
+    .search-filter-section select {
+        min-width: 100px;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+
+    .view-toggle-btn,
+    .notification-btn,
+    .email-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .add-task-row {
+        gap: 10px;
+    }
+
+    #taskInput {
+        min-width: 180px;
+    }
+
+    #prioritySelect,
+    #labelSelect,
+    #assigneeSelect {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+
+    #dueDateInput,
+    #startDateInput {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Mobile Breakpoint - 768px */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 12px;
+    }
+
+    .top-bar {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 14px;
+    }
+
+    .board-menu-btn {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .board-menu-btn span {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .team-section {
+        display: none;
+    }
+
+    .header {
+        padding: 16px;
+        margin-bottom: 20px;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .header-left {
+        text-align: center;
+    }
+
+    .header h1 {
+        font-size: 1.3rem;
+        justify-content: center;
+    }
+
+    .header p {
+        font-size: 0.8rem;
+    }
+
+    .header-right {
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .search-filter-section {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-box {
+        max-width: 100%;
+        min-width: 100%;
+    }
+
+    .search-filter-section select {
+        width: 100%;
+    }
+
+    #clearFiltersBtn {
+        align-self: flex-end;
+    }
+
+    .header-right > button,
+    .header-right > .theme-toggle,
+    .header-right > .theme-customize-btn {
+        display: none;
+    }
+
+    /* Show only essential buttons in a row */
+    .header-right::after {
+        content: '';
+        display: none;
+    }
+
+    .add-task-section {
+        padding: 14px;
+        margin-bottom: 20px;
+    }
+
+    .add-task-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    #taskInput {
+        min-width: 100%;
+    }
+
+    #prioritySelect,
+    #labelSelect,
+    #assigneeSelect,
+    #dueDateInput,
+    #startDateInput,
+    #editStartDateInput,
+    #editDueDateInput {
+        width: 100%;
+        padding: 12px 14px;
+    }
+
+    #addTaskBtn {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+    }
+
+    #descriptionInput {
+        min-height: 60px;
+    }
+
+    .board {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .column {
+        min-height: auto;
+        padding: 16px;
+    }
+
+    .column-header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    .column-header h2 {
+        font-size: 0.95rem;
+    }
+
+    .task-card {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .task-title {
+        font-size: 0.9rem;
+    }
+
+    .task-actions {
+        opacity: 1;
+    }
+
+    .task-actions button {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .task-meta {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .task-label,
+    .task-due-date,
+    .task-start-date {
+        font-size: 0.65rem;
+        padding: 2px 8px;
+    }
+
+    .priority-badge {
+        font-size: 0.65rem;
+        padding: 2px 8px;
+    }
+
+    .footer {
+        padding: 16px 0;
+    }
+
+    .footer button {
+        padding: 10px 18px;
+        font-size: 0.85rem;
+    }
+
+    #addColumnBtn,
+    #clearAllBtn {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .footer p {
+        font-size: 0.75rem;
+    }
+
+    /* Modal Responsive */
+    .modal {
+        padding: 10px;
+    }
+
+    .modal-content {
+        padding: 20px;
+        max-height: 95vh;
+        border-radius: var(--radius-md);
+    }
+
+    .modal-content h3 {
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+    }
+
+    .modal-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
+
+    /* Time tracking section */
+    .time-tracking-section {
+        padding: 12px;
+    }
+
+    .time-tracking-header {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .time-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .timer-btn {
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .current-timer {
+        width: 100%;
+        text-align: center;
+        margin-left: 0;
+    }
+
+    /* Subtasks section */
+    .subtasks-section {
+        padding: 12px;
+    }
+
+    .subtask-input-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .subtask-input-row input {
+        width: 100%;
+    }
+
+    .subtask-input-row button {
+        width: 100%;
+    }
+}
+
+/* Small Mobile Breakpoint - 480px */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 8px;
+    }
+
+    .top-bar {
+        padding: 8px 10px;
+    }
+
+    .mobile-menu-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+    }
+
+    .board-menu-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        gap: 6px;
+    }
+
+    .board-menu-btn span {
+        max-width: 80px;
+    }
+
+    .header {
+        padding: 12px;
+        margin-bottom: 16px;
+        border-radius: var(--radius-md);
+    }
+
+    .header h1 {
+        font-size: 1.1rem;
+        gap: 8px;
+    }
+
+    .header h1 i {
+        font-size: 1rem;
+    }
+
+    .header p {
+        font-size: 0.75rem;
+    }
+
+    .add-task-section {
+        padding: 12px;
+        margin-bottom: 16px;
+        border-radius: var(--radius-md);
+    }
+
+    #taskInput,
+    #prioritySelect,
+    #labelSelect,
+    #assigneeSelect,
+    #dueDateInput,
+    #startDateInput {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+
+    #addTaskBtn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+
+    .board {
+        gap: 12px;
+    }
+
+    .column {
+        padding: 12px;
+        border-radius: var(--radius-md);
+    }
+
+    .column-header h2 {
+        font-size: 0.85rem;
+    }
+
+    .task-count {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+
+    .task-card {
+        padding: 10px;
+        border-radius: var(--radius-sm);
+    }
+
+    .task-header {
+        gap: 8px;
+    }
+
+    .task-title {
+        font-size: 0.85rem;
+    }
+
+    .task-description {
+        font-size: 0.75rem;
+    }
+
+    .task-meta {
+        gap: 4px;
+    }
+
+    .task-label,
+    .task-due-date,
+    .task-start-date,
+    .priority-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+    }
+
+    .task-assignee {
+        width: 22px;
+        height: 22px;
+        font-size: 0.6rem;
+    }
+
+    .footer {
+        padding: 12px 0;
+    }
+
+    .footer button {
+        padding: 10px 14px;
+        font-size: 0.8rem;
+    }
+
+    /* Modal adjustments */
+    .modal-content {
+        padding: 16px;
+    }
+
+    .modal-content h3 {
+        font-size: 1rem;
+    }
+
+    /* Navigation sidebar full width on mobile */
+    .nav-sidebar {
+        width: 100%;
+    }
+
+    .nav-header {
+        padding: 16px 12px;
+    }
+
+    .nav-brand {
+        font-size: 1rem;
+    }
+
+    .nav-item {
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+
+    .nav-section {
+        padding: 12px 10px;
+    }
+}
+
+/* Extra Small Devices - 360px */
+@media (max-width: 360px) {
+    .main-content {
+        padding: 6px;
+    }
+
+    .header h1 {
+        font-size: 1rem;
+    }
+
+    .board-menu-btn span {
+        max-width: 60px;
+    }
+
+    #addTaskBtn {
+        font-size: 0.85rem;
+    }
+
+    .task-actions button {
+        width: 26px;
+        height: 26px;
+    }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (hover: none) and (pointer: coarse) {
+    .task-actions {
+        opacity: 1;
+    }
+
+    .delete-board-btn {
+        opacity: 1;
+    }
+
+    .nav-team-delete {
+        display: flex;
+    }
+
+    button,
+    select,
+    input[type="date"] {
+        min-height: 44px;
+    }
+
+    .task-card {
+        cursor: pointer;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .modal-content {
+        max-height: 98vh;
+        padding: 12px;
+    }
+
+    .modal-content h3 {
+        margin-bottom: 12px;
+        font-size: 1rem;
+    }
+
+    .nav-sidebar {
+        overflow-y: auto;
+    }
+}
+
+/* Print styles for mobile */
+@media print {
+    .mobile-menu-btn,
+    .nav-sidebar,
+    .nav-backdrop,
+    .theme-toggle,
+    .theme-customize-btn {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .board {
+        grid-template-columns: repeat(3, 1fr);
     }
 }

@@ -48,6 +48,8 @@ class KanbanBoard {
         this.navSidebar = document.getElementById('navSidebar');
         this.navToggle = document.getElementById('navToggle');
         this.navBackdrop = document.getElementById('navBackdrop');
+        this.mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        this.navCloseBtn = document.getElementById('navCloseBtn');
         this.navDashboard = document.getElementById('navDashboard');
         this.navMyTasks = document.getElementById('navMyTasks');
         this.navHighPriority = document.getElementById('navHighPriority');
@@ -256,12 +258,18 @@ class KanbanBoard {
 
     init() {
         this.initTheme();
+        this.initMobileNavigation();
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
         this.themeCustomizeBtn.addEventListener('click', () => this.openThemeCustomizeModal());
 
         // Navigation Sidebar Events
         this.navToggle.addEventListener('click', () => this.toggleSidebar());
         this.navBackdrop.addEventListener('click', () => this.closeSidebar());
+        this.mobileMenuBtn.addEventListener('click', () => this.openMobileSidebar());
+        this.navCloseBtn.addEventListener('click', () => this.closeSidebar());
+        
+        // Handle window resize for mobile navigation
+        window.addEventListener('resize', () => this.handleResize());
         
         // Quick access filters
         this.navMyTasks.addEventListener('click', () => this.filterMyTasks());
@@ -1843,8 +1851,35 @@ class KanbanBoard {
     }
 
     // ==================== NAVIGATION SIDEBAR ====================
+    initMobileNavigation() {
+        // Show sidebar on desktop, hide on mobile/tablet
+        if (window.innerWidth > 1024) {
+            this.navSidebar.classList.remove('hidden');
+        } else {
+            this.navSidebar.classList.add('hidden');
+        }
+    }
+
+    handleResize() {
+        // Show sidebar on desktop, keep hidden state on mobile
+        if (window.innerWidth > 1024) {
+            this.navSidebar.classList.remove('hidden');
+            this.navBackdrop.classList.remove('visible');
+        } else {
+            // Only hide if not currently visible
+            if (!this.navBackdrop.classList.contains('visible')) {
+                this.navSidebar.classList.add('hidden');
+            }
+        }
+    }
+
     toggleSidebar() {
         this.navSidebar.classList.toggle('collapsed');
+    }
+
+    openMobileSidebar() {
+        this.navSidebar.classList.remove('hidden');
+        this.navBackdrop.classList.add('visible');
     }
 
     closeSidebar() {
