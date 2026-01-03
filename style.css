@@ -272,6 +272,29 @@ body {
     color: var(--text-muted);
 }
 
+.search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-blue);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    color: white;
+}
+
+.search-btn:hover {
+    background: var(--accent-blue-hover, #4a9eff);
+    transform: scale(1.05);
+}
+
+.search-btn i {
+    font-size: 0.8rem;
+    color: white;
+}
+
 .search-filter-section select {
     padding: 10px 12px;
     border: 1px solid var(--border-color);

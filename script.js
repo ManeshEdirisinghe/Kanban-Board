@@ -346,6 +346,16 @@ class KanbanBoard {
         this.addTimeBtn.addEventListener('click', () => this.addManualTime());
 
         this.searchInput.addEventListener('input', () => this.applyFilters());
+        this.searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.applyFilters();
+        });
+        
+        // Search button click event
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => this.applyFilters());
+        }
+        
         this.filterPriority.addEventListener('change', () => this.applyFilters());
         this.filterLabel.addEventListener('change', () => this.applyFilters());
         this.filterAssignee.addEventListener('change', () => this.applyFilters());
