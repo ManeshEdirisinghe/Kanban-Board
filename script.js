@@ -1070,9 +1070,30 @@ class KanbanBoard {
             let matches = true;
 
             if (searchTerm) {
-                const textMatch = task.text.toLowerCase().includes(searchTerm);
+                // Search in task title
+                const textMatch = task.text && task.text.toLowerCase().includes(searchTerm);
+                // Search in task description
                 const descMatch = task.description && task.description.toLowerCase().includes(searchTerm);
-                matches = textMatch || descMatch;
+                // Search in label name
+                const labelMatch = task.label && this.labels[task.label] && 
+                    this.labels[task.label].name.toLowerCase().includes(searchTerm);
+                // Search in priority
+                const priorityMatch = task.priority && task.priority.toLowerCase().includes(searchTerm);
+                // Search in assignee name
+                let assigneeMatch = false;
+                if (task.assignee) {
+                    const member = this.getMember(task.assignee);
+                    assigneeMatch = member && member.name.toLowerCase().includes(searchTerm);
+                }
+                // Search in subtasks
+                const subtaskMatch = task.subtasks && task.subtasks.some(st => 
+                    st.text && st.text.toLowerCase().includes(searchTerm));
+                // Search in comments
+                const commentMatch = task.comments && task.comments.some(c => 
+                    c.text && c.text.toLowerCase().includes(searchTerm));
+                
+                matches = textMatch || descMatch || labelMatch || priorityMatch || 
+                          assigneeMatch || subtaskMatch || commentMatch;
             }
             if (matches && priorityFilter !== 'all') matches = task.priority === priorityFilter;
             if (matches && labelFilter !== 'all') matches = task.label === labelFilter;
@@ -2180,13 +2201,15 @@ class KanbanBoard {
     }
 
     filterTemplates() {
-        const searchTerm = this.templateSearchInput.value.toLowerCase();
+        const searchTerm = this.templateSearchInput.value.toLowerCase().trim();
         const cards = this.templatesList.querySelectorAll('.template-card');
         
         cards.forEach(card => {
-            const title = card.querySelector('.template-card-title').textContent.toLowerCase();
-            const desc = card.querySelector('.template-card-description')?.textContent.toLowerCase() || '';
-            const matches = title.includes(searchTerm) || desc.includes(searchTerm);
+            const titleEl = card.querySelector('.template-card-title');
+            const descEl = card.querySelector('.template-card-description');
+            const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+            const desc = descEl ? descEl.textContent.toLowerCase() : '';
+            const matches = !searchTerm || title.includes(searchTerm) || desc.includes(searchTerm);
             card.style.display = matches ? '' : 'none';
         });
     }
