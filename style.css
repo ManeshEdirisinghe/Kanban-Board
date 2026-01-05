@@ -4768,3 +4768,319 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* ============================================
+   ENHANCED MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Improved touch targets for mobile */
+@media (max-width: 768px) {
+    /* Make buttons and interactive elements easier to tap */
+    button, 
+    .nav-item,
+    .task-card,
+    select,
+    input[type="text"],
+    input[type="date"] {
+        min-height: 44px;
+    }
+
+    /* Better modal experience on mobile */
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: var(--radius-md);
+    }
+
+    .modal-content h3 {
+        font-size: 1.1rem;
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        padding: 12px 0;
+        margin: -16px -16px 16px -16px;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+        z-index: 10;
+    }
+
+    .modal-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .modal-buttons button {
+        width: 100%;
+        padding: 14px;
+    }
+
+    /* Scrollable board container for horizontal swipe */
+    .board {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        overflow-x: visible;
+        padding-bottom: 20px;
+    }
+
+    .column {
+        width: 100%;
+        min-width: 100%;
+        flex-shrink: 0;
+    }
+
+    /* Collapsible columns for mobile */
+    .column-header {
+        cursor: pointer;
+    }
+
+    /* Filter dropdown improvements */
+    .search-filter-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .search-box {
+        grid-column: 1 / -1;
+    }
+
+    .search-btn {
+        display: none;
+    }
+
+    #clearFiltersBtn {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    /* Bottom fixed action button for adding tasks */
+    .add-task-section {
+        position: relative;
+    }
+
+    /* Improved dropdown positioning */
+    .board-dropdown {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: auto;
+        max-width: calc(100vw - 20px);
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    /* Better task card layout */
+    .task-meta {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .task-label,
+    .task-due-date,
+    .task-start-date,
+    .priority-badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+
+    /* Floating action button for quick add */
+    .floating-add-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+        color: white;
+        border: none;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* Hide desktop-only elements */
+    .view-toggle-btn,
+    .notification-btn,
+    .email-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+    }
+
+    /* Gantt and Calendar view responsive */
+    .gantt-container,
+    .calendar-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .gantt-chart {
+        min-width: 600px;
+    }
+
+    /* Footer adjustments */
+    .footer {
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+    }
+
+    .footer button {
+        width: 100%;
+    }
+}
+
+/* Small phone specific adjustments */
+@media (max-width: 400px) {
+    .main-content {
+        padding: 8px;
+    }
+
+    .top-bar {
+        padding: 8px;
+    }
+
+    .mobile-menu-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .board-menu-btn {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+    }
+
+    .board-menu-btn span {
+        max-width: 60px;
+    }
+
+    .header {
+        padding: 12px;
+    }
+
+    .header h1 {
+        font-size: 1rem;
+    }
+
+    .add-task-section {
+        padding: 10px;
+    }
+
+    .search-filter-section {
+        grid-template-columns: 1fr;
+    }
+
+    .column {
+        padding: 10px;
+    }
+
+    .task-card {
+        padding: 10px;
+    }
+
+    .task-title {
+        font-size: 0.85rem;
+    }
+
+    .nav-sidebar {
+        width: 100%;
+    }
+
+    .nav-item {
+        padding: 14px 12px;
+    }
+
+    /* Ensure modals are usable on very small screens */
+    .modal-content {
+        padding: 12px;
+        max-height: 95vh;
+    }
+
+    .modal-content h3 {
+        font-size: 1rem;
+    }
+
+    input, select, textarea {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+}
+
+/* Safe area insets for notched phones */
+@supports (padding: max(0px)) {
+    .main-content {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    .nav-sidebar {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    .floating-add-btn {
+        bottom: max(20px, calc(env(safe-area-inset-bottom) + 10px));
+        right: max(20px, env(safe-area-inset-right));
+    }
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+    overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        overflow-x: hidden;
+    }
+}
+
+/* Smooth scrolling for touch devices */
+@media (hover: none) and (pointer: coarse) {
+    * {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .board,
+    .modal-content,
+    .nav-content,
+    .column {
+        scroll-behavior: smooth;
+    }
+
+    /* Larger drag handles for touch */
+    .task-card {
+        touch-action: pan-y;
+    }
+
+    /* Remove hover effects that don't work on touch */
+    .task-card:hover {
+        transform: none;
+    }
+
+    .nav-item:hover {
+        transform: none;
+    }
+
+    /* Make close buttons more visible */
+    .nav-close-btn {
+        display: flex;
+        width: 40px;
+        height: 40px;
+    }
+}
